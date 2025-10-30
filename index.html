@@ -226,7 +226,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2025-10-30 16:37:07 / 修改时间：19:05:48" itemprop="dateCreated datePublished" datetime="2025-10-30T16:37:07+08:00">2025-10-30</time>
+      <time title="创建时间：2025-10-30 16:37:07 / 修改时间：19:54:22" itemprop="dateCreated datePublished" datetime="2025-10-30T16:37:07+08:00">2025-10-30</time>
     </span>
 
   
@@ -239,7 +239,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h2 id="本帖将持续记录shellcode的一些编写技巧，包括长度的优化，特定限制的绕过，shellcode的绕过"><a href="#本帖将持续记录shellcode的一些编写技巧，包括长度的优化，特定限制的绕过，shellcode的绕过" class="headerlink" title="本帖将持续记录shellcode的一些编写技巧，包括长度的优化，特定限制的绕过，shellcode的绕过"></a>本帖将持续记录shellcode的一些编写技巧，包括长度的优化，特定限制的绕过，shellcode的绕过</h2><blockquote>
+          <h2 id="本帖将持续记录Linux下shellcode的一些编写技巧，包括长度的优化，特定限制的绕过，shellcode的绕过"><a href="#本帖将持续记录Linux下shellcode的一些编写技巧，包括长度的优化，特定限制的绕过，shellcode的绕过" class="headerlink" title="本帖将持续记录Linux下shellcode的一些编写技巧，包括长度的优化，特定限制的绕过，shellcode的绕过"></a>本帖将持续记录Linux下shellcode的一些编写技巧，包括长度的优化，特定限制的绕过，shellcode的绕过</h2><blockquote>
 <p>鉴于本人汇编基础较弱，目前在持续学习中，如有不正确或含糊的表述，欢迎联系我与我讨论！</p>
 </blockquote>
 <p>Shellcode的编写在二进制安全中是不可避免的，当回归到汇编这种较为底层的语言去实现一些特定功能时，我们往往会发现不只有一种方法能够实现我们的目的。这里我就拿64位中实现 <code>read(0,0x404000,0x50)</code>来举例子：</p>
@@ -250,26 +250,23 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">section .text</span><br><span class="line">    global _start</span><br><span class="line"></span><br><span class="line">_start:</span><br><span class="line">    push 0x50           ; count</span><br><span class="line">    push 0x404000       ; buf</span><br><span class="line">    push 0              ; fd</span><br><span class="line">    </span><br><span class="line">    pop rdi             ; fd</span><br><span class="line">    pop rsi             ; buf</span><br><span class="line">    pop rdx             ; count</span><br><span class="line">    </span><br><span class="line">    mov rax, 0          ; sys_read</span><br><span class="line">    syscall</span><br></pre></td></tr></table></figure>
 
 <p>3.切换到32位操作模式，用中断门调用read操作</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">section .text</span><br><span class="line">    global _start</span><br><span class="line"></span><br><span class="line">[bits 64]</span><br><span class="line">_start:</span><br><span class="line">    jmp switch_to_32bit</span><br><span class="line"></span><br><span class="line">[bits 32]</span><br><span class="line">code32:</span><br><span class="line">    ; 32位代码：read(0, 0x404000, 0x50)</span><br><span class="line">    mov eax, 3          ; sys_read = 3</span><br><span class="line">    mov ebx, 0          ; fd = 0</span><br><span class="line">    mov ecx, 0x404000   ; buf</span><br><span class="line">    mov edx, 0x50       ; count</span><br><span class="line">    int 0x80</span><br><span class="line">   	;可以根据需求是否返回64模式</span><br><span class="line"></span><br><span class="line">[bits 64]</span><br><span class="line">switch_to_32bit:</span><br><span class="line">		;这里构造一个假的farcall的栈底结构，iretq会返回code32并</span><br><span class="line">		mov rax, 0x7fffe000  ; 确保可读可写地址在32位地址范围内</span><br><span class="line">    mov rsp, rax				</span><br><span class="line">    push 0x23           ; 32位数据段选择子</span><br><span class="line">    push rsp	</span><br><span class="line">    pushf</span><br><span class="line">    push 0x2b           ; 32位代码段选择子  </span><br><span class="line">    push code32</span><br><span class="line">    iretq               ; 通过中断返回到32位模式</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">section .text</span><br><span class="line">    global _start</span><br><span class="line"></span><br><span class="line">[bits 64]</span><br><span class="line">_start:</span><br><span class="line">    ; 直接使用远返回到32位模式</span><br><span class="line">    push 0x2b           ; 32位CS</span><br><span class="line">    push code32         ; 32位EIP</span><br><span class="line">    retfq               ; 远返回</span><br><span class="line"></span><br><span class="line">[bits 32]</span><br><span class="line">code32:</span><br><span class="line">    ; 手动设置32位栈</span><br><span class="line">    mov esp, 0x7fffe000</span><br><span class="line">    </span><br><span class="line">    ; 32位系统调用</span><br><span class="line">    mov eax, 3          ; sys_read</span><br><span class="line">    mov ebx, 0          ; stdin</span><br><span class="line">    mov ecx, 0x404000   ; buffer</span><br><span class="line">    mov edx, 0x50       ; size</span><br><span class="line">    int 0x80</span><br><span class="line">    </span><br><span class="line">    mov eax, 1          ; sys_exit</span><br><span class="line">    mov ebx, 0</span><br><span class="line">    int 0x80</span><br></pre></td></tr></table></figure>
 
 <p>可以看到汇编的灵活性是非常大的，当然在实战中对于shellcode的编写往往存在着各种各样的限制，比如长度有限，shellcode分割，沙箱保护，特定字符检测等等。通过汇编的灵活性，在某些情况下能够绕过重重难关从而达到我们的目的。</p>
 <h3 id="优化shellcode的长度"><a href="#优化shellcode的长度" class="headerlink" title="优化shellcode的长度"></a>优化shellcode的长度</h3><p>列一下常见的64位指令长度</p>
-<p>栈的操作</p>
-<ul>
+<h6 id="栈的操作"><a href="#栈的操作" class="headerlink" title="栈的操作"></a>栈的操作</h6><ul>
 <li>pop&#x2F;push reg 1字节</li>
 <li>push imm 1+立即数的字节数(1&#x2F;2&#x2F;4)</li>
 </ul>
-<p>赋值&#x2F;计算操作</p>
-<ul>
+<h6 id="赋值-计算操作"><a href="#赋值-计算操作" class="headerlink" title="赋值&#x2F;计算操作"></a>赋值&#x2F;计算操作</h6><ul>
 <li>Inc&#x2F;dec reg 字节</li>
-<li>mov&#x2F;add reg64，reg64    2字节</li>
-<li>mov&#x2F;add reg, [reg]      3字节</li>
-<li>mov&#x2F;add reg, imm32 5字节</li>
-<li>mov&#x2F;add reg64, imm32 7字节</li>
-<li>mov&#x2F;add reg64, imm64 10字节</li>
+<li>mov&#x2F;add reg64，reg64     2字节</li>
+<li>mov&#x2F;add reg, [reg]             3字节</li>
+<li>mov&#x2F;add reg, imm32          5字节</li>
+<li>mov&#x2F;add reg64, imm32      7字节</li>
+<li>mov&#x2F;add reg64, imm64      10字节</li>
 </ul>
-<p>程序流</p>
-<ul>
+<h6 id="程序流"><a href="#程序流" class="headerlink" title="程序流"></a>程序流</h6><ul>
 <li>ret  1字节</li>
 <li>syscall 2字节</li>
 <li>jmp等跳转 short 2字节</li>
@@ -283,7 +280,9 @@
 <li><code>08</code>: 相对偏移量（从下条指令开始计算）</li>
 </ul>
 <p>在知道对应内存块的相对位移的情况下(通常来说只要位于同一内存段偏移一般固定)在每个内存块尾部加上这么一条相对跳转指令即可</p>
-<p>题目试例：<br>题目的大致执行流程是想三块堆空间中分别读取0x18数据，然后将堆空间变成可执行的跳到第一个堆块空间，并且题目开了沙箱ban掉execve系统调用。</p>
+<p>题目试例：</p>
+<p>西电mini的checkin题</p>
+<p>题目的大致执行流程是向三块堆空间中分别读取0x18数据，然后将堆空间变成可执行的，并跳到第一个堆块空间，题目开了沙箱ban掉execve系统调用。</p>
 <p><img src="/2025/10/30/shellcode-tips/1.png"></p>
 <p>非常直球的题目，要在三段堆空间构造orw的shellcode。动调查看三个堆块之间的相对偏移（这个是固定的），在每一段shellcode末尾加上jmp $x即可</p>
 <p>poc脚本</p>
@@ -293,8 +292,28 @@
 <ul>
 <li><h6 id="有些题目会先strlen-inputshellcode-得到shellcode长度，再根据长度进行检测。在这种情况下我们在shellcode开头构造存在-x00的汇编-前提是读取shellcode时没有-x00截断-，这样检测实际上检测的内容是-x00前面的内容。而后面的shellcode就可以自由发挥啦"><a href="#有些题目会先strlen-inputshellcode-得到shellcode长度，再根据长度进行检测。在这种情况下我们在shellcode开头构造存在-x00的汇编-前提是读取shellcode时没有-x00截断-，这样检测实际上检测的内容是-x00前面的内容。而后面的shellcode就可以自由发挥啦" class="headerlink" title="有些题目会先strlen(inputshellcode)得到shellcode长度，再根据长度进行检测。在这种情况下我们在shellcode开头构造存在\x00的汇编(前提是读取shellcode时没有\x00截断)，这样检测实际上检测的内容是\x00前面的内容。而后面的shellcode就可以自由发挥啦"></a>有些题目会先strlen(inputshellcode)得到shellcode长度，再根据长度进行检测。在这种情况下我们在shellcode开头构造存在\x00的汇编(前提是读取shellcode时没有\x00截断)，这样检测实际上检测的内容是\x00前面的内容。而后面的shellcode就可以自由发挥啦</h6></li>
 </ul>
+<p>例子待补充</p>
 <h3 id="突破沙箱的限制"><a href="#突破沙箱的限制" class="headerlink" title="突破沙箱的限制"></a>突破沙箱的限制</h3><p>在题目中遇到沙箱ban掉一些特定的系统调用的情况在ctf中屡见不鲜，沙箱的规则制定相对自由，不同题目可以不同组合ban，记录一下目前接触到的突破沙箱构造法</p>
-<h4 id="等价函数替换"><a href="#等价函数替换" class="headerlink" title="等价函数替换"></a>等价函数替换</h4>
+<h4 id="等价函数替换"><a href="#等价函数替换" class="headerlink" title="等价函数替换"></a>等价函数替换</h4><p>一系列可能用到的等价替换函数：</p>
+<ul>
+<li><p>使用 <code>execveat</code> 代替 <code>execve</code></p>
+</li>
+<li><p>使用 <code>openat</code> 代替 <code>open</code></p>
+</li>
+<li><p>使用 <code>readv/writev</code> 代替 <code>read/write</code></p>
+</li>
+<li><p>使用 <code>mmap2</code> 代替 <code>mmap</code></p>
+</li>
+<li><p>orw中，使用 <code>sendfile</code>，代替 <code>read/write</code></p>
+</li>
+</ul>
+<h4 id="切换指令模式绕过黑名单"><a href="#切换指令模式绕过黑名单" class="headerlink" title="切换指令模式绕过黑名单"></a>切换指令模式绕过黑名单</h4><p>当seccomp-tool工具发现沙箱中没有判断指令模式并且采取的是黑名单ban的模式，那么我们可以通过长返回retf的方式来实现架构切换。因为32位与64位同一个系统调用的调用号是不同的。</p>
+<p>注意构造retf的栈布局：64——&gt;32位shellcode模版</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">xor esp, esp</span><br><span class="line">mov rsp, 0x400100</span><br><span class="line">mov eax, 0x23 ; cs</span><br><span class="line">mov [rsp+4], eax</span><br><span class="line">mov eax, 0x400800 ; ip</span><br><span class="line">mov [rsp], eax</span><br><span class="line">retf</span><br></pre></td></tr></table></figure>
+
+<h3 id="纯ascii码shellcode"><a href="#纯ascii码shellcode" class="headerlink" title="纯ascii码shellcode"></a>纯ascii码shellcode</h3><p>这部分我还没碰到到过，这里有篇还没啃的blog：<a target="_blank" rel="noopener" href="https://nets.ec/Ascii_shellcode">https://nets.ec/Ascii_shellcode</a></p>
+<p>这部分感觉技巧性很强，多用xor，inc，dec等精细到字的操作，对于shellcode水平要求很高，我如果真遇到应该也是试试工具了(雾</p>
+
       
     </div>
 
