@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.25.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="开始步入linux内核的学习。打算实践为主导，先自己搭一个内核调试的环境，并在过程中学习遇到的相关知识 内核态与用户态的分割 安全性的考虑：用户态中恶意程序无法执行特权指令，破坏系统。其中内核态空间用户态应用无权访问。 稳定性的保障：用户态中程序发生错误并不会导致内核的运作发生错误而影响整个系统的稳定性 抽象化硬件调度操作：内核为用户态实现统一的设备访问接口（系统调用），用户程序无需关注不同设备的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux内核初探及环境搭建">
+<meta property="og:url" content="http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/index.html">
+<meta property="og:site_name" content="No_t1me&#39;s blog">
+<meta property="og:description" content="开始步入linux内核的学习。打算实践为主导，先自己搭一个内核调试的环境，并在过程中学习遇到的相关知识 内核态与用户态的分割 安全性的考虑：用户态中恶意程序无法执行特权指令，破坏系统。其中内核态空间用户态应用无权访问。 稳定性的保障：用户态中程序发生错误并不会导致内核的运作发生错误而影响整个系统的稳定性 抽象化硬件调度操作：内核为用户态实现统一的设备访问接口（系统调用），用户程序无需关注不同设备的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/1.png">
+<meta property="article:published_time" content="2025-11-02T17:36:58.000Z">
+<meta property="article:modified_time" content="2025-11-05T00:10:46.968Z">
+<meta property="article:author" content="no_t1me">
+<meta property="article:tag" content="linux kernel">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/1.png">
+
+
+<link rel="canonical" href="http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/","path":"2025/11/03/linux内核初探及环境搭建/","title":"linux内核初探及环境搭建"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>linux内核初探及环境搭建 | No_t1me's blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">No_t1me's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">lost in binary</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E6%80%81%E4%B8%8E%E7%94%A8%E6%88%B7%E6%80%81%E7%9A%84%E5%88%86%E5%89%B2"><span class="nav-number">1.</span> <span class="nav-text">内核态与用户态的分割</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E8%BF%90%E8%A1%8C%E4%B8%80%E4%B8%AAlinux%E5%86%85%E6%A0%B8"><span class="nav-number">2.</span> <span class="nav-text">编译运行一个linux内核</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%BD%E7%95%A5%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%E7%AD%BE%E5%90%8D%E9%AA%8C%E8%AF%81"><span class="nav-number">2.1.</span> <span class="nav-text">忽略内核模块签名验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E9%95%9C%E5%83%8F%E4%B8%8E%E7%A3%81%E7%9B%98%E9%95%9C%E5%83%8F"><span class="nav-number">2.2.</span> <span class="nav-text">内核镜像与磁盘镜像</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#bzImage"><span class="nav-number">2.2.1.</span> <span class="nav-text">bzImage</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rootfs-img"><span class="nav-number">2.2.2.</span> <span class="nav-text">rootfs.img</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">2.2.3.</span> <span class="nav-text">启动流程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97"><span class="nav-number">3.</span> <span class="nav-text">编译一个简单内核模块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%E4%B8%8E%E7%94%A8%E6%88%B7%E4%BA%A4%E4%BA%92%E6%9C%BA%E5%88%B6"><span class="nav-number">3.1.</span> <span class="nav-text">内核模块与用户交互机制</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#file-operations%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">3.1.1.</span> <span class="nav-text">file_operations结构体</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cdev-%E5%AD%97%E7%AC%A6%E8%AE%BE%E5%A4%87%E5%AF%B9%E8%B1%A1"><span class="nav-number">3.1.2.</span> <span class="nav-text">cdev - 字符设备对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%AE%BE%E5%A4%87init%E5%B8%B8%E8%A7%81%E6%B5%81%E7%A8%8B"><span class="nav-number">3.1.3.</span> <span class="nav-text">字符串设备init常见流程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95pwn%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">如何pwn？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%AC%E5%9C%B0%E6%89%93%E6%B3%95%EF%BC%9A"><span class="nav-number">4.1.</span> <span class="nav-text">本地打法：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%9C%E7%A8%8B%E6%89%93%E6%B3%95%EF%BC%9A"><span class="nav-number">4.2.</span> <span class="nav-text">远程打法：</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">no_t1me</p>
+  <div class="site-description" itemprop="description">逝者如斯夫，不舍昼夜</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/No-t1me" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;No-t1me" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:birty073@126.com" title="email → mailto:birty073@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>email</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          友情链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://ret2ldz.github.io/" title="https:&#x2F;&#x2F;ret2ldz.github.io" rel="noopener" target="_blank">ldz</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.jimmmmmiesblog.cn/" title="https:&#x2F;&#x2F;www.jimmmmmiesblog.cn" rel="noopener" target="_blank">Jimmy</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://aucept.in/" title="https:&#x2F;&#x2F;aucept.in" rel="noopener" target="_blank">Auceptin</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="no_t1me">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="No_t1me's blog">
+      <meta itemprop="description" content="逝者如斯夫，不舍昼夜">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="linux内核初探及环境搭建 | No_t1me's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          linux内核初探及环境搭建
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-11-03 01:36:58" itemprop="dateCreated datePublished" datetime="2025-11-03T01:36:58+08:00">2025-11-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-11-05 08:10:46" itemprop="dateModified" datetime="2025-11-05T08:10:46+08:00">2025-11-05</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>开始步入linux内核的学习。打算实践为主导，先自己搭一个内核调试的环境，并在过程中学习遇到的相关知识</p>
+<h2 id="内核态与用户态的分割"><a href="#内核态与用户态的分割" class="headerlink" title="内核态与用户态的分割"></a>内核态与用户态的分割</h2><ul>
+<li>安全性的考虑：用户态中恶意程序无法执行特权指令，破坏系统。其中内核态空间用户态应用无权访问。</li>
+<li>稳定性的保障：用户态中程序发生错误并不会导致内核的运作发生错误而影响整个系统的稳定性</li>
+<li>抽象化硬件调度操作：内核为用户态实现<strong>统一的设备访问接口</strong>（系统调用），用户程序无需关注不同设备的交互细节</li>
+</ul>
+<p>在用户态程序中，通常利用read等系统调用后就能实现对应的写内存等操作，其中的实现细节便是在内核态中完成的。</p>
+<h2 id="编译运行一个linux内核"><a href="#编译运行一个linux内核" class="headerlink" title="编译运行一个linux内核"></a>编译运行一个linux内核</h2><p>网上很多相关的步骤，算是步入内核大门的第一步。这里详细记录一下本人通过这个实践的收获：</p>
+<h3 id="忽略内核模块签名验证"><a href="#忽略内核模块签名验证" class="headerlink" title="忽略内核模块签名验证"></a>忽略内核模块签名验证</h3><blockquote>
+<p> <em><strong>Linux内核从3.7版本开始引入了模块签名验证机制。开启后，内核在加载模块时会使用内置的公钥对模块的签名进行校验，以确保模块的完整性和来源可信。这对于安全至关重要，但在开发和编译阶段，它可能会带来不便，因为默认情况下，内核会尝试使用自己编译过程中生成的一套密钥来签名模块。</strong></em></p>
+</blockquote>
+<p>因为后面会利用该内核编译一些自己写的内核模块，所以在编译之前需要禁用相应选项。</p>
+<h3 id="内核镜像与磁盘镜像"><a href="#内核镜像与磁盘镜像" class="headerlink" title="内核镜像与磁盘镜像"></a>内核镜像与磁盘镜像</h3><p>在实验中我分别下载linux内核文件以及busybox分别编译，最终获得下述两个文件:<code>bzImage</code>与<code>rootfs.img</code></p>
+<h4 id="bzImage"><a href="#bzImage" class="headerlink" title="bzImage"></a>bzImage</h4><ul>
+<li><code>bzImage</code> 的意思是 “big zImage”，是经过压缩的Linux内核二进制文件</li>
+<li>它包含了Linux内核的所有代码：进程调度、内存管理、设备驱动、文件系统支持、网络协议栈等</li>
+</ul>
+<h4 id="rootfs-img"><a href="#rootfs-img" class="headerlink" title="rootfs.img"></a>rootfs.img</h4><ul>
+<li>一个包含了完整Linux系统<strong>目录结构</strong>和<strong>必要文件</strong>的磁盘映像。</li>
+<li>由BusyBox等工具制作，包含了Shell、核心工具（<code>ls</code>, <code>cp</code>, <code>mkdir</code>等）、库文件、配置文件和初始化脚本</li>
+</ul>
+<h4 id="启动流程"><a href="#启动流程" class="headerlink" title="启动流程"></a>启动流程</h4><p>+———————————+<br>          BIOS&#x2F;UEFI                  ← 硬件启动<br>+———————————+<br>           ↓<br>+———————————+<br>         Bootloader (GRUB)            ← 加载 bzImage 到内存<br>+———————————+<br>           ↓<br>+———————————+<br>       Linux Kernel (bzImage)        ← 解压、初始化硬件、驱动<br>+———————————+<br>           ↓ (通过内核参数指定 rootfs)<br>+———————————+<br>      挂载根文件系统 (rootfs.img)      ← 从磁盘&#x2F;内存&#x2F;网络找到 rootfs<br>+———————————+<br>           ↓<br>+———————————+<br>     执行 &#x2F;init 或 &#x2F;sbin&#x2F;init       ← 第一个用户空间进程 (PID 1)<br>+———————————+<br>           ↓<br>+———————————+<br>         Shell 或系统服务             ← 完整的用户空间环境<br>+———————————+</p>
+<blockquote>
+<p>挂载：一开始的内核只有临时的目录结构，真正健全的目录系统rootfs.img还在磁盘上，挂载能够<strong>将存储设备上的文件系统关联到目录树的某个位置，使得内核可以通过文件路径访问存储设备的内容</strong>，内核系统能够正常启动离不开若干次成功的挂载。</p>
+</blockquote>
+<h2 id="编译一个简单内核模块"><a href="#编译一个简单内核模块" class="headerlink" title="编译一个简单内核模块"></a>编译一个简单内核模块</h2><p>内核模块的文件后缀是.ko       </p>
+<p>一般用c实现内核模块的编写，通过同目录下的Kbuild文件以及Makefile实现编译操作。便可以在系统中使用insmod载入模块，rfmod卸载模块。</p>
+<p><img src="/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/1.png"></p>
+<blockquote>
+<p>当在内核模块能够控制到函数的rip(程序执行流)，就能够通过某些方法实现提权一般来说躲不开两个函数：<code>commit_creds_kfunc(prepare_kernel_cred_kfunc(0))</code>这两个函数配合的效果会将当前进程变成0环，从而实现提取。同时要注意内核态要正确过渡到用户态我们才能自由利用提权成果</p>
+</blockquote>
+<p><em><strong>注意内核模块的逻辑运行环境是内核态，这其中有许多机制与用户态不同，这也是后续我需要学习的内容。</strong></em></p>
+<h3 id="内核模块与用户交互机制"><a href="#内核模块与用户交互机制" class="headerlink" title="内核模块与用户交互机制"></a>内核模块与用户交互机制</h3><p>用户与内核模块程序交互相对于用户态程序较为麻烦，存在多种方式：</p>
+<ul>
+<li><strong>&#x2F;proc ，&#x2F;sys文件系统</strong></li>
+<li><strong>ioctl 命令</strong></li>
+<li><strong>netlink 套接字</strong></li>
+<li>注册系统调用&#x2F;中断</li>
+</ul>
+<p>与破解内核模块的第一步就是搞清楚它实现的与用户交互的机制从而正确测试各项功能，这里有篇文章详细地解释并实现了各种交互方式：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/adam-ma/p/18084237">https://www.cnblogs.com/adam-ma/p/18084237</a></p>
+<h4 id="file-operations结构体"><a href="#file-operations结构体" class="headerlink" title="file_operations结构体"></a>file_operations结构体</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">file_operations</span> <span class="title">my_device_fops</span> =</span> &#123;</span><br><span class="line">    .owner = THIS_MODULE,							<span class="comment">//指向拥有者</span></span><br><span class="line">    .open = my_device_open,							<span class="comment">//处理打开操作</span></span><br><span class="line">    .release = my_device_release,			<span class="comment">//处理close操作</span></span><br><span class="line">    .read = my_device_read,           <span class="comment">// 处理读取操作</span></span><br><span class="line">    .write = my_device_write,         <span class="comment">// 处理写入操作  </span></span><br><span class="line">    .unlocked_ioctl = my_device_ioctl,<span class="comment">// 处理控制命令</span></span><br><span class="line">    .llseek = my_device_llseek,       <span class="comment">// 处理文件定位</span></span><br><span class="line">&#125;; <span class="comment">//这里只展示了常见的操作</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="cdev-字符设备对象"><a href="#cdev-字符设备对象" class="headerlink" title="cdev - 字符设备对象"></a>cdev - 字符设备对象</h4><p>代表内核中的一个<strong>字符设备实例</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">cdev</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">kobject</span> <span class="title">kobj</span>;</span>              <span class="comment">// 内嵌的kobject，用于设备模型</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">module</span> *<span class="title">owner</span>;</span>             <span class="comment">// 指向拥有此设备的模块</span></span><br><span class="line">    <span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">file_operations</span> *<span class="title">ops</span>;</span> <span class="comment">// 文件操作函数集</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">list</span>;</span>            <span class="comment">// 连接到cdev_map的链表</span></span><br><span class="line">    <span class="type">dev_t</span> dev;                        <span class="comment">// 设备号（主设备号 + 次设备号）</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> count;               <span class="comment">// 设备数量（次设备号范围）</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="字符串设备init常见流程"><a href="#字符串设备init常见流程" class="headerlink" title="字符串设备init常见流程"></a>字符串设备init常见流程</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">dev_t</span> devno = MKDEV(DEVICE_MAJOR, DEVICE_MINOR);   <span class="comment">//构造设备号</span></span><br><span class="line">register_chrdev_region(devno, <span class="number">1</span>, DEVICE_NAME);   <span class="comment">//向内核“登记”设备号区间</span></span><br><span class="line">cdev_init(&amp;my_device_cdev, &amp;my_device_fops);  <span class="comment">//初始化字符设备对象，并赋予文件操作指针</span></span><br><span class="line">my_device_cdev.owner = THIS_MODULE;    <span class="comment">//指定模块所有者</span></span><br><span class="line">cdev_add(&amp;my_device_cdev, devno, <span class="number">1</span>); <span class="comment">//把字符设备正式放进内核</span></span><br><span class="line">char_class = class_create(THIS_MODULE, CLASS_NAME);  <span class="comment">//创建设备类</span></span><br><span class="line">char_device = device_create(char_class, <span class="literal">NULL</span>, devno, <span class="literal">NULL</span>, DEVICE_NAME); <span class="comment">//创建设备文件</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>对于dev&#x2F;DEVICE_NAME文件的操作会映射成内核模块的操作</p>
+<h2 id="如何pwn？"><a href="#如何pwn？" class="headerlink" title="如何pwn？"></a>如何pwn？</h2><p>一般来说题目会给一个bzImage对应编译好的内核镜像，roofts.img对应着文件系统的镜像，并给一个启动脚本，利用启动脚本能够qemu启动内核，在启动脚本中加入-g方便gdb调试。exp的形式一般是用c语言编译成elf文件，在题目给定的内核环境中与有漏洞的ko内核模块进行交互实现提权的操作。</p>
+<h4 id="本地打法："><a href="#本地打法：" class="headerlink" title="本地打法："></a>本地打法：</h4><p>构造sh文件编译exp并整合到rootfs.img文件镜像中，shell脚本如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">编译 exploit</span></span><br><span class="line">echo &quot;[*] Compiling exploit...&quot;</span><br><span class="line">gcc exp.c -static -masm=intel -g -o exploit || &#123;</span><br><span class="line">    echo &quot;[-] Compilation failed!&quot;</span><br><span class="line">    exit 1</span><br><span class="line">&#125; </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">打包文件系统</span></span><br><span class="line">echo &quot;[*] Creating rootfs.cpio...&quot;</span><br><span class="line">sudo bash -c &quot;find . | cpio -o --format=newc &gt; ../rootfs.cpio&quot; || &#123;</span><br><span class="line">    echo &quot;[-] Failed to create cpio archive!&quot;</span><br><span class="line">    exit 1</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">返回上级目录</span></span><br><span class="line">cd ..</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">启动内核</span></span><br><span class="line">echo &quot;[*] Launching kernel...&quot;</span><br><span class="line">sudo ./start.sh</span><br></pre></td></tr></table></figure>
+
+<h4 id="远程打法："><a href="#远程打法：" class="headerlink" title="远程打法："></a>远程打法：</h4><p>将攻击程序传输到远程中并运行，这时会出现攻击可执行文件过大的问题(因为是静态编译)，比较通用的解决方法是将 exploit 进行 base64 编码后传输。python脚本如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="comment">#context.log_level = &quot;debug&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./exp&quot;</span>, <span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    exp = base64.b64encode(f.read())</span><br><span class="line"></span><br><span class="line">p = remote(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">11451</span>)  <span class="comment">#连接远程地址</span></span><br><span class="line"><span class="comment">#p = process(&#x27;./run.sh&#x27;)</span></span><br><span class="line">try_count = <span class="number">1</span></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    p.sendline()</span><br><span class="line">    p.recvuntil(<span class="string">&quot;/ $&quot;</span>)</span><br><span class="line"></span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(exp), <span class="number">0x200</span>):</span><br><span class="line">        p.sendline(<span class="string">&quot;echo -n \&quot;&quot;</span> + exp[i:i + <span class="number">0x200</span>].decode() + <span class="string">&quot;\&quot; &gt;&gt; /tmp/b64_exp&quot;</span>)</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">        log.info(<span class="string">&quot;count: &quot;</span> + <span class="built_in">str</span>(count))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(count):</span><br><span class="line">        p.recvuntil(<span class="string">&quot;/ $&quot;</span>)</span><br><span class="line"></span><br><span class="line">    p.sendline(<span class="string">&quot;cat /tmp/b64_exp | base64 -d &gt; /tmp/exploit&quot;</span>)</span><br><span class="line">    p.sendline(<span class="string">&quot;chmod +x /tmp/exploit&quot;</span>)</span><br><span class="line">    p.sendline(<span class="string">&quot;/tmp/exploit &quot;</span>)</span><br><span class="line">    <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+
+
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/linux-kernel/" rel="tag"># linux kernel</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/10/30/shellcode-tips/" rel="prev" title="shellcode_tips(持续更新版)">
+                  <i class="fa fa-angle-left"></i> shellcode_tips(持续更新版)
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/" rel="next" title="N1ctf中nipple题目复现">
+                  N1ctf中nipple题目复现 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">no_t1me</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

