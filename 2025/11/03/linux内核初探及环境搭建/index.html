@@ -27,8 +27,9 @@
 <meta property="og:description" content="开始步入linux内核的学习。打算实践为主导，先自己搭一个内核调试的环境，并在过程中学习遇到的相关知识 内核态与用户态的分割 安全性的考虑：用户态中恶意程序无法执行特权指令，破坏系统。其中内核态空间用户态应用无权访问。 稳定性的保障：用户态中程序发生错误并不会导致内核的运作发生错误而影响整个系统的稳定性 抽象化硬件调度操作：内核为用户态实现统一的设备访问接口（系统调用），用户程序无需关注不同设备的">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/1.png">
+<meta property="og:image" content="http://example.com/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/1.png">
 <meta property="article:published_time" content="2025-11-02T17:36:58.000Z">
-<meta property="article:modified_time" content="2025-11-05T00:10:46.968Z">
+<meta property="article:modified_time" content="2025-11-10T07:53:36.206Z">
 <meta property="article:author" content="no_t1me">
 <meta property="article:tag" content="linux kernel">
 <meta name="twitter:card" content="summary">
@@ -131,7 +132,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E6%80%81%E4%B8%8E%E7%94%A8%E6%88%B7%E6%80%81%E7%9A%84%E5%88%86%E5%89%B2"><span class="nav-number">1.</span> <span class="nav-text">内核态与用户态的分割</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E8%BF%90%E8%A1%8C%E4%B8%80%E4%B8%AAlinux%E5%86%85%E6%A0%B8"><span class="nav-number">2.</span> <span class="nav-text">编译运行一个linux内核</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%BD%E7%95%A5%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%E7%AD%BE%E5%90%8D%E9%AA%8C%E8%AF%81"><span class="nav-number">2.1.</span> <span class="nav-text">忽略内核模块签名验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E9%95%9C%E5%83%8F%E4%B8%8E%E7%A3%81%E7%9B%98%E9%95%9C%E5%83%8F"><span class="nav-number">2.2.</span> <span class="nav-text">内核镜像与磁盘镜像</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#bzImage"><span class="nav-number">2.2.1.</span> <span class="nav-text">bzImage</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rootfs-img"><span class="nav-number">2.2.2.</span> <span class="nav-text">rootfs.img</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">2.2.3.</span> <span class="nav-text">启动流程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97"><span class="nav-number">3.</span> <span class="nav-text">编译一个简单内核模块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%E4%B8%8E%E7%94%A8%E6%88%B7%E4%BA%A4%E4%BA%92%E6%9C%BA%E5%88%B6"><span class="nav-number">3.1.</span> <span class="nav-text">内核模块与用户交互机制</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#file-operations%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">3.1.1.</span> <span class="nav-text">file_operations结构体</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cdev-%E5%AD%97%E7%AC%A6%E8%AE%BE%E5%A4%87%E5%AF%B9%E8%B1%A1"><span class="nav-number">3.1.2.</span> <span class="nav-text">cdev - 字符设备对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%AE%BE%E5%A4%87init%E5%B8%B8%E8%A7%81%E6%B5%81%E7%A8%8B"><span class="nav-number">3.1.3.</span> <span class="nav-text">字符串设备init常见流程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95pwn%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">如何pwn？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%AC%E5%9C%B0%E6%89%93%E6%B3%95%EF%BC%9A"><span class="nav-number">4.1.</span> <span class="nav-text">本地打法：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%9C%E7%A8%8B%E6%89%93%E6%B3%95%EF%BC%9A"><span class="nav-number">4.2.</span> <span class="nav-text">远程打法：</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E6%80%81%E4%B8%8E%E7%94%A8%E6%88%B7%E6%80%81%E7%9A%84%E5%88%86%E5%89%B2"><span class="nav-number">1.</span> <span class="nav-text">内核态与用户态的分割</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E8%BF%90%E8%A1%8C%E4%B8%80%E4%B8%AAlinux%E5%86%85%E6%A0%B8"><span class="nav-number">2.</span> <span class="nav-text">编译运行一个linux内核</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%BD%E7%95%A5%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%E7%AD%BE%E5%90%8D%E9%AA%8C%E8%AF%81"><span class="nav-number">2.1.</span> <span class="nav-text">忽略内核模块签名验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E9%95%9C%E5%83%8F%E4%B8%8E%E7%A3%81%E7%9B%98%E9%95%9C%E5%83%8F"><span class="nav-number">2.2.</span> <span class="nav-text">内核镜像与磁盘镜像</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#bzImage"><span class="nav-number">2.2.1.</span> <span class="nav-text">bzImage</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rootfs-img"><span class="nav-number">2.2.2.</span> <span class="nav-text">rootfs.img</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">2.2.3.</span> <span class="nav-text">启动流程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97"><span class="nav-number">3.</span> <span class="nav-text">编译一个简单内核模块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%E4%B8%8E%E7%94%A8%E6%88%B7%E4%BA%A4%E4%BA%92%E6%9C%BA%E5%88%B6"><span class="nav-number">3.1.</span> <span class="nav-text">内核模块与用户交互机制</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#file-operations%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">3.1.1.</span> <span class="nav-text">file_operations结构体</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cdev-%E5%AD%97%E7%AC%A6%E8%AE%BE%E5%A4%87%E5%AF%B9%E8%B1%A1"><span class="nav-number">3.1.2.</span> <span class="nav-text">cdev - 字符设备对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%AE%BE%E5%A4%87init%E5%B8%B8%E8%A7%81%E6%B5%81%E7%A8%8B"><span class="nav-number">3.1.3.</span> <span class="nav-text">字符串设备init常见流程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95pwn%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">如何pwn？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%AC%E5%9C%B0%E6%89%93%E6%B3%95%EF%BC%9A"><span class="nav-number">4.1.</span> <span class="nav-text">本地打法：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%9C%E7%A8%8B%E6%89%93%E6%B3%95%EF%BC%9A"><span class="nav-number">4.2.</span> <span class="nav-text">远程打法：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6"><span class="nav-number">5.</span> <span class="nav-text">常见保护机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#KASLR-%E4%BF%9D%E6%8A%A4"><span class="nav-number">5.1.</span> <span class="nav-text">KASLR 保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SMEP-SMAP%E4%BF%9D%E6%8A%A4"><span class="nav-number">5.2.</span> <span class="nav-text">SMEP&amp;SMAP保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#KPTI%E4%BF%9D%E6%8A%A4"><span class="nav-number">5.3.</span> <span class="nav-text">KPTI保护</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -144,13 +145,13 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">8</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -239,7 +240,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2025-11-05 08:10:46" itemprop="dateModified" datetime="2025-11-05T08:10:46+08:00">2025-11-05</time>
+      <time title="修改时间：2025-11-10 15:53:36" itemprop="dateModified" datetime="2025-11-10T15:53:36+08:00">2025-11-10</time>
     </span>
 
   
@@ -276,7 +277,18 @@
 <blockquote>
 <p>挂载：一开始的内核只有临时的目录结构，真正健全的目录系统rootfs.img还在磁盘上，挂载能够<strong>将存储设备上的文件系统关联到目录树的某个位置，使得内核可以通过文件路径访问存储设备的内容</strong>，内核系统能够正常启动离不开若干次成功的挂载。</p>
 </blockquote>
-<h2 id="编译一个简单内核模块"><a href="#编译一个简单内核模块" class="headerlink" title="编译一个简单内核模块"></a>编译一个简单内核模块</h2><p>内核模块的文件后缀是.ko       </p>
+<h2 id="编译一个简单内核模块"><a href="#编译一个简单内核模块" class="headerlink" title="编译一个简单内核模块"></a>编译一个简单内核模块</h2><p><em>Linux Kernel 采用的是宏内核架构，一切的系统服务都需要由内核来提供，虽然效率较高，但是缺乏可扩展性与可维护性，同时内核需要装载很多可能用到的服务，但这些服务最终可能未必会用到，还会占据大量内存空间，同时新服务的提供往往意味着要重新编译整个内核。</em>——&gt;，<strong>可装载内核模块</strong>（Loadable Kernel Modules）应运而生， LKMs 可以像积木一样被装载入内核 &#x2F; 从内核中卸载，大大提高了 kernel 的可拓展性与可维护性。</p>
+<p>常见的 LKMs 包括：</p>
+<ul>
+<li>驱动程序（Device drivers）<ul>
+<li>设备驱动</li>
+<li>文件系统驱动</li>
+<li>各种驱动…</li>
+</ul>
+</li>
+<li>内核扩展模块 (modules)</li>
+</ul>
+<p>内核模块的文件后缀是.ko       </p>
 <p>一般用c实现内核模块的编写，通过同目录下的Kbuild文件以及Makefile实现编译操作。便可以在系统中使用insmod载入模块，rfmod卸载模块。</p>
 <p><img src="/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/1.png"></p>
 <blockquote>
@@ -312,6 +324,41 @@
 
 
 
+<h2 id="常见保护机制"><a href="#常见保护机制" class="headerlink" title="常见保护机制"></a>常见保护机制</h2><h3 id="KASLR-保护"><a href="#KASLR-保护" class="headerlink" title="KASLR 保护"></a>KASLR 保护</h3><p>KASLR（Kernel Address Space Layout Randomization）是一种用于保护操作系统内核的安全技术。它通过在系统启动时随机化内核地址空间的布局来防止攻击者确定内核中的精确地址</p>
+<blockquote>
+<p>值得注意的是随机方式是通过<code>函数基地址 +随机值=内存运行地址</code>方式来随机化 </p>
+<p>本质上与用户态的aslr绕过思路相近，通过泄露地址活的基址</p>
+</blockquote>
+<p>这里贴出实现的原理：</p>
+<ol>
+<li><p><strong>引导阶段</strong>：</p>
+<ul>
+<li>引导加载程序在将内核镜像加载到内存时，会选择一个随机的物理地址偏移。</li>
+<li>这个偏移量通常被称为“KASLR偏移”。</li>
+</ul>
+</li>
+<li><p><strong>内核重定位</strong>：</p>
+<ul>
+<li>内核启动早期，在建立页表之前，会应用这个随机偏移。</li>
+<li>内核需要具备<strong>位置无关</strong>或<strong>可重定位</strong>的能力，能够正确处理自身地址的变动。这意味着内核在编译时需要使用<code>-fPIC</code>等选项，并且内部的<strong>重定位表</strong>需要被正确处理。</li>
+<li>最终，内核的虚拟地址（在x86_64上，通常是<code>0xffffffff80000000</code>开始的-2GB空间）也会被加上这个随机偏移。</li>
+</ul>
+<blockquote>
+<p>这里的重定位表和PE&#x2F;ELF文件中的并无差别！</p>
+</blockquote>
+</li>
+</ol>
+<h3 id="SMEP-SMAP保护"><a href="#SMEP-SMAP保护" class="headerlink" title="SMEP&amp;SMAP保护"></a>SMEP&amp;SMAP保护</h3><p>通过在CR4寄存器中定位其中两个bit位，代表内核是否开启保护</p>
+<ul>
+<li>SMEP：控制内核态不能执行用户态的shellcode</li>
+<li>SMAP：控制用户态空间的指针不能被内核态解引用，即不能访问内核空间中的敏感信息</li>
+</ul>
+<blockquote>
+<p>CR4控制了CPU的<strong>工作模式和安全特性</strong>，内核统一管理所有CPU的CR4（策略保持一致）</p>
+</blockquote>
+<p><img src="/2025/11/03/linux%E5%86%85%E6%A0%B8%E5%88%9D%E6%8E%A2%E5%8F%8A%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/1.png"></p>
+<h3 id="KPTI保护"><a href="#KPTI保护" class="headerlink" title="KPTI保护"></a>KPTI保护</h3><p>kernel page-table isolation(内核页表隔离),通过完全分离用户空间与内核空间页表来解决页表泄露。</p>
+<p>一旦开启了 KPTI,由于内核态和用户态的页表不同，所以如果使用 ret2user或内核执行 ROP返回用户态时，由于内核态无法确定用户态的页表，就会报出一个段错误。</p>
 
     </div>
 

