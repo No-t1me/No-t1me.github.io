@@ -687,9 +687,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2025-10-30 16:37:07 / 修改时间：19:54:22" itemprop="dateCreated datePublished" datetime="2025-10-30T16:37:07+08:00">2025-10-30</time>
+      <time title="创建时间：2025-10-30 16:37:07" itemprop="dateCreated datePublished" datetime="2025-10-30T16:37:07+08:00">2025-10-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-11-19 11:24:55" itemprop="dateModified" datetime="2025-11-19T11:24:55+08:00">2025-11-19</time>
     </span>
 
   
@@ -736,7 +742,12 @@
 <li>jmp&#x2F;call rel32  5字节</li>
 </ul>
 <p>经过对比栈操作与赋值的指令，发现当使用 <code>push imm</code> + <code>pop reg</code> 替代 &#96;mov reg, imm会使汇编更加精简。同时在jmp到shellcode前的上下文也是我们需要观察的，对于栈，寄存器上的数据没准我们就能利用上来减少shellcode的长度。</p>
-<p>例子待补充</p>
+<h4 id="Xctf-Nctf-only"><a href="#Xctf-Nctf-only" class="headerlink" title="Xctf-Nctf only"></a>Xctf-Nctf only</h4><p>题目给了0xa大小的shellcode执行，shellcode用mmap分配，寄存器在执行shellcode前清0。这里考虑用栈上数据，我一开始想跳到读取shellcode的read处，通过修改rdx为一个很大的值来达成任意长度的shellcode写。<code>base_shellcode=asm(&#39;&#39;&#39; pop rdx ;操作返回地址来修改跳转位置 mov rax,[rbp-0x10] ；确保read的buf为shellcode地址 sub dl,0x18                     jmp rdx                  &#39;&#39;&#39;)</code></p>
+<p>(因为read的长度太大，与rdi相加后超过0x7fffffff的用户空间会报错)远程没通。wing师傅的shellcode相比之下更加巧妙：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">asm(&quot;&quot;&quot;</span><br><span class="line">        call pop ;将rip放到栈上</span><br><span class="line">    pop:</span><br><span class="line">        pop rsi ;buf</span><br><span class="line">        mov dl, 0x68 ;len</span><br><span class="line">        syscall ;rax,rdi已经置0，实现read(0,rip,0x68)</span><br><span class="line">    tag:</span><br><span class="line">        &quot;&quot;&quot;)</span><br></pre></td></tr></table></figure>
+
+
+
 <h3 id="shellcode分块"><a href="#shellcode分块" class="headerlink" title="shellcode分块"></a>shellcode分块</h3><p>有些情景下我们不具备写入连续内容的能力，那么需要将我们写入的shellcode<code>拼凑</code>到一起从而形成一段完整的执行链。这里需要用到相对跳转，也就是<code>jmp $+0x8</code>：这段汇编的意思为跳转到当前eip+0x8的地址上去执行，其汇编拆解便是EB 08</p>
 <ul>
 <li><code>EB</code>: 短跳转操作码</li>
@@ -953,7 +964,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2025-10-29 15:13:26" itemprop="dateModified" datetime="2025-10-29T15:13:26+08:00">2025-10-29</time>
+      <time title="修改时间：2025-11-19 11:27:37" itemprop="dateModified" datetime="2025-11-19T11:27:37+08:00">2025-11-19</time>
     </span>
 
   
@@ -1027,6 +1038,14 @@
 </blockquote>
 <p>这个方法利用的前提是在libc_csu_fini中遍历调用fini_array时函数将栈给迁移到了fini_array上，但是在GLIBC3.35以上用的 _dl_call_fini()中栈并没有迁移到这上面，当然也就失效了。</p>
 <h4 id="总结一下"><a href="#总结一下" class="headerlink" title="总结一下"></a>总结一下</h4><p>综合看来这种利用方法貌似比较过时了(主要局限在fini_array数组的位置不可写)，不过这次对于libc_start_main函数的探索也受益良多，本人对于底层的原理尚有很多待探索的。感受较深的就是版本的更迭也就意味攻击手法的更新也需跟上，那么对底层原理的熟练掌握以及积极发动主观能动思考能力也就不可或缺，加油！</p>
+<h4 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h4><p>遇到一道pwnable中的题，用的是2.23-0ubuntu-5版本libc，fini_array数组不可写，然而仍然可以用fini_array来pwn</p>
+<p>这里推翻两个先前的想法：</p>
+<ul>
+<li>Fini_array不可写与libc版本高低有关——并非，其可写性主要在于是否开了RELRO的保护(是否为Full relro)。</li>
+<li>fini_array不可写不意味着完全不能利用fini_array劫持程序流</li>
+</ul>
+<p>题目中利用了对应版本的ld中对于fini_array操作前计算fini_array的操作：</p>
+<p>从栈中取出主程序对应的linkmap，并在其中取出dynamic段的fini_array与fini_array_size(full_retro下不可写)，<img src="/2025/10/23/libc-csu-fini%E5%8A%AB%E6%8C%81/5.png">然而这个结构体在main函数的时候其实是保存在栈上的！<img src="/2025/10/23/libc-csu-fini%E5%8A%AB%E6%8C%81/6.png">这段结构体是可写的，那么如果能够通过格式化字符串等漏洞往栈上这个结构体内固定偏移写入数据，就能控制fini_array到可控地址从而使劫持exit后到程序流！</p>
 
       
     </div>
